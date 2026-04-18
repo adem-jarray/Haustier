@@ -90,8 +90,10 @@ export async function bookAppointment(params: {
   time: string;
   reason: string;
   userId: string;
+  patientName?: string;
+  patientEmail?: string;
 }): Promise<{ error: string | null }> {
-  const { vetDbId, date, time, reason, userId } = params;
+  const { vetDbId, date, time, reason, userId, patientName, patientEmail } = params;
 
   // Insert appointment
   const { data: appt, error: apptErr } = await supabase
@@ -103,6 +105,8 @@ export async function bookAppointment(params: {
       appointment_time: time,
       reason,
       status: "pending",
+      patient_name: patientName ?? null,
+      patient_email: patientEmail ?? null,
     })
     .select()
     .single();
@@ -152,13 +156,17 @@ export function useVetAppointments(vetDbId: string | null) {
   const load = useCallback(async () => {
     if (!vetDbId) return;
     setLoading(true);
+    // Try to join profiles; fall back gracefully if the table/column doesn't exist
     const { data } = await supabase
       .from("appointments")
-      .select("*, profiles(full_name)")
+      .select("*")
       .eq("vet_id", vetDbId)
       .order("appointment_date", { ascending: true });
     setAppointments(
-      (data ?? []).map((a: any) => ({ ...a, patient_name: a.profiles?.full_name }))
+      (data ?? []).map((a: any) => ({
+        ...a,
+        patient_name: a.patient_name ?? a.patient_email ?? "Patient",
+      }))
     );
     setLoading(false);
   }, [vetDbId]);

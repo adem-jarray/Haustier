@@ -9,7 +9,7 @@ interface AuthContextType {
   user: User | null;
   role: UserRole;
   loading: boolean;
-  signOut: () => Promise<void>;
+  signOut: (onDone?: () => void) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -17,7 +17,7 @@ const AuthContext = createContext<AuthContextType>({
   user: null,
   role: "user",
   loading: true,
-  signOut: async () => {},
+  signOut: async (_onDone?: () => void) => {},
 });
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
@@ -40,8 +40,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => subscription.unsubscribe();
   }, []);
 
-  const signOut = async () => {
+  const signOut = async (onDone?: () => void) => {
     await supabase.auth.signOut();
+    if (onDone) onDone();
   };
 
   const role: UserRole = (session?.user?.user_metadata?.role as UserRole) ?? "user";

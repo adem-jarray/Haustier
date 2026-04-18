@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import vetDoctor from "@/assets/vet-doctor.png";
 import { Star, MapPin, Clock, X, Calendar, Phone, Search, ExternalLink, Heart, LogIn, Filter, Stethoscope, Award, Sparkles, Map } from "lucide-react";
 import { StarRating } from "@/components/HeroAndFeatures";
 import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useFavorites } from "@/context/FavoritesContext";
 import { VetProfile } from "@/components/HeroAndFeatures";
@@ -123,6 +123,7 @@ const VetsSection = () => {
   const { user, role } = useAuth();
   const { favVets, toggleVet } = useFavorites();
   const { allVets } = useDynamicData();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [profileVet, setProfileVet] = useState<VetEntry | null>(null);
   const [bookingVet, setBookingVet] = useState<VetEntry | null>(null);
   const [loginPrompt, setLoginPrompt] = useState<string | null>(null);
@@ -131,6 +132,25 @@ const VetsSection = () => {
   const [specialtyFilter, setSpecialtyFilter] = useState("Tous");
   const [expanded, setExpanded] = useState(false);
   const [showMap, setShowMap] = useState(false);
+
+  // Restore vet profile from URL on mount / when allVets loads
+  useEffect(() => {
+    const vetId = searchParams.get("vet");
+    if (vetId && allVets.length > 0) {
+      const found = allVets.find(v => String(v.id) === vetId);
+      if (found) setProfileVet(found);
+    }
+  }, [allVets]); // intentionally not including searchParams to avoid loop
+
+  const openProfile = (vet: VetEntry) => {
+    setProfileVet(vet);
+    setSearchParams({ vet: String(vet.id) }, { replace: true });
+  };
+
+  const closeProfile = () => {
+    setProfileVet(null);
+    setSearchParams({}, { replace: true });
+  };
 
   const filtered = allVets.filter(v => {
     const q = search.toLowerCase();
@@ -226,7 +246,7 @@ const VetsSection = () => {
             <div className="mb-8 card-shadow rounded-2xl overflow-hidden border border-border/40">
               <VetMap
                 vets={filtered.filter(v => v.lat && v.lng)}
-                onSelectVet={vet => { setProfileVet(vet); setShowMap(false); }}
+                onSelectVet={vet => { openProfile(vet); setShowMap(false); }}
               />
             </div>
           )}
@@ -238,7 +258,7 @@ const VetsSection = () => {
                 key={vet.id}
                 vet={vet}
                 isFav={favVets.includes(String(vet.id)) && !!user}
-                onView={() => setProfileVet(vet)}
+                onView={() => openProfile(vet)}
                 onRDV={e => handleRDV(vet, e)}
                 onFav={e => handleFav(vet, e)}
               />
@@ -265,7 +285,7 @@ const VetsSection = () => {
       {profileVet && (
         <VetProfile
           vet={profileVet}
-          onClose={() => setProfileVet(null)}
+          onClose={closeProfile}
           onRDV={() => {
             if (!user) { setLoginPrompt("prendre un rendez-vous"); return; }
             if (role !== "user") { setRolePrompt(true); return; }

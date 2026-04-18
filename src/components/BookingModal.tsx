@@ -66,6 +66,8 @@ export function BookingModal({ vet, vetDbId, onClose }: Props) {
       time: selectedTime,
       reason,
       userId: user.id,
+      patientName: user.user_metadata?.full_name ?? undefined,
+      patientEmail: user.email ?? undefined,
     });
     setSubmitting(false);
     if (err) { setError(err); return; }
