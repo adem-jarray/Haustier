@@ -14,7 +14,7 @@ export function useMyVetProfile() {
       .from("veterinarians")
       .select("*")
       .eq("user_id", user.id)
-      .single();
+      .maybeSingle();
     setVet(data);
     setLoading(false);
   }, [user]);
@@ -55,7 +55,7 @@ export function useMyAssocProfile() {
       .from("associations")
       .select("*")
       .eq("user_id", user.id)
-      .single();
+      .maybeSingle();
     setAssoc(data);
     setLoading(false);
   }, [user]);
@@ -186,4 +186,67 @@ export function useVetSlots(vetId: string | null) {
   };
 
   return { slots, loading, addSlot, removeSlot, refresh: load };
+}
+
+// ─── CAMPAIGNS ─────────────────────────────────────────────────────────────
+export function useCampaigns(assocId: string | null) {
+  const [campaigns, setCampaigns] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  const load = useCallback(async () => {
+    if (!assocId) return;
+    setLoading(true);
+    const { data } = await supabase
+      .from("campaigns")
+      .select("*")
+      .eq("association_id", assocId)
+      .order("created_at", { ascending: false });
+    setCampaigns(data ?? []);
+    setLoading(false);
+  }, [assocId]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const addCampaign = async (fields: Record<string, any>) => {
+    const { error } = await supabase
+      .from("campaigns")
+      .insert({ ...fields, association_id: assocId });
+    if (!error) load();
+    return error;
+  };
+
+  const removeCampaign = async (id: string) => {
+    await supabase.from("campaigns").delete().eq("id", id);
+    load();
+  };
+
+  return { campaigns, loading, addCampaign, removeCampaign, refresh: load };
+}
+
+// ─── SUPPORT (Donations & Volunteers) ─────────────────────────────────────────
+export function useSupport(assocId: string | null) {
+  const [donations, setDonations] = useState<any[]>([]);
+  const [volunteers, setVolunteers] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  const load = useCallback(async () => {
+    if (!assocId) return;
+    setLoading(true);
+    const [donRes, volRes] = await Promise.all([
+      supabase.from("donations").select("*, profiles(full_name)").eq("association_id", assocId).order("created_at", { ascending: false }),
+      supabase.from("volunteer_requests").select("*, profiles(full_name)").eq("association_id", assocId).order("created_at", { ascending: false })
+    ]);
+    setDonations(donRes.data ?? []);
+    setVolunteers(volRes.data ?? []);
+    setLoading(false);
+  }, [assocId]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const updateVolunteerStatus = async (id: string, status: string) => {
+    await supabase.from("volunteer_requests").update({ status }).eq("id", id);
+    load();
+  };
+
+  return { donations, volunteers, loading, updateVolunteerStatus, refresh: load };
 }

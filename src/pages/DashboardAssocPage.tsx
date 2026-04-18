@@ -3,9 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { Navbar, ToastContainer } from "@/components/HeroAndFeatures";
 import Footer from "@/components/Footer";
 import { useAuth } from "@/hooks/useAuth";
-import { useMyAssocProfile, useAssocAnimals, useAdoptionRequests } from "@/hooks/useDashboard";
+import { useMyAssocProfile, useAssocAnimals, useAdoptionRequests, useCampaigns, useSupport } from "@/hooks/useDashboard";
 import { Button } from "@/components/ui/button";
-import { User, Heart, Save, Plus, Trash2, CheckCircle, XCircle, ArrowLeft, Shield, FileText } from "lucide-react";
+import { User, Heart, Save, Plus, Trash2, CheckCircle, XCircle, ArrowLeft, Shield, FileText, Syringe, HandHeart } from "lucide-react";
 import PostsSection from "@/components/PostsSection";
 
 const ADOPTION_STATUS_COLORS: Record<string, string> = {
@@ -19,13 +19,15 @@ const ADOPTION_STATUS_FR: Record<string, string> = {
 };
 
 export default function DashboardAssocPage() {
-  const { user } = useAuth();
+  const { user, role } = useAuth();
   const navigate = useNavigate();
-  const [tab, setTab] = useState<"profile"|"animals"|"adoptions">("profile");
+  const [tab, setTab] = useState<"profile"|"animals"|"adoptions"|"posts"|"campaigns"|"support">("profile");
 
   const { assoc, loading, update, create } = useMyAssocProfile();
   const { animals, addAnimal, updateAnimal, removeAnimal } = useAssocAnimals(assoc?.id ?? null);
   const { requests, updateStatus } = useAdoptionRequests(assoc?.id ?? null);
+  const { campaigns, addCampaign, removeCampaign } = useCampaigns(assoc?.id ?? null);
+  const { donations, volunteers, updateVolunteerStatus } = useSupport(assoc?.id ?? null);
 
   const [form, setForm] = useState<Record<string,string>>({});
   const [saving, setSaving] = useState(false);
@@ -39,7 +41,12 @@ export default function DashboardAssocPage() {
   const [addingAnimal, setAddingAnimal] = useState(false);
   const [showAnimalForm, setShowAnimalForm] = useState(false);
 
-  if (!user) { navigate("/auth"); return null; }
+  // New campaign form
+  const [showCampaignForm, setShowCampaignForm] = useState(false);
+  const [newCampaign, setNewCampaign] = useState({ title: "", description: "", event_date: "" });
+  const [addingCampaign, setAddingCampaign] = useState(false);
+
+  if (!user || role !== "association") { navigate("/"); return null; }
   if (loading) return <div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" /></div>;
 
   const profileData = assoc ?? {};
@@ -64,25 +71,40 @@ export default function DashboardAssocPage() {
     setNewAnimal({ name:"", species:"dog", breed:"", age_months:"", gender:"Mâle", description:"", is_vaccinated:false, is_sterilized:false, status:"available" });
   };
 
+  const handleAddCampaign = async () => {
+    if (!newCampaign.title) return;
+    setAddingCampaign(true);
+    await addCampaign({
+      title: newCampaign.title,
+      description: newCampaign.description,
+      event_date: newCampaign.event_date ? new Date(newCampaign.event_date).toISOString() : null
+    });
+    setAddingCampaign(false);
+    setShowCampaignForm(false);
+    setNewCampaign({ title: "", description: "", event_date: "" });
+  };
+
   const tabs = [
     { id:"profile",   label:"Mon profil",   icon:User },
     { id:"animals",   label:"Mes animaux",  icon:Heart },
     { id:"adoptions", label:"Adoptions",    icon:CheckCircle },
     { id:"posts",     label:"Publications", icon:FileText },
+    { id:"campaigns", label:"Campagnes",    icon:Syringe },
+    { id:"support",   label:"Dons & Bénévoles", icon:HandHeart },
   ] as const;
 
   return (
     <div className="min-h-screen page-enter">
       <Navbar />
       <main className="pt-20 pb-16 section-cream min-h-screen">
-        <div className="container mx-auto px-4 max-w-4xl">
+        <div className="container mx-auto px-4 max-w-5xl">
           <div className="flex items-center gap-4 mb-8">
             <button onClick={() => navigate("/animaux")} className="w-10 h-10 rounded-full bg-white border border-border flex items-center justify-center hover:bg-muted transition-colors card-shadow">
               <ArrowLeft className="h-4 w-4" />
             </button>
             <div>
               <h1 className="text-2xl font-bold text-foreground" style={{fontFamily:"Fraunces,serif"}}>Espace association</h1>
-              <p className="text-muted-foreground text-sm">Gérez votre profil et vos animaux</p>
+              <p className="text-muted-foreground text-sm">Gérez votre profil, vos animaux et vos campagnes</p>
             </div>
           </div>
 
@@ -99,14 +121,14 @@ export default function DashboardAssocPage() {
 
           {/* Profile */}
           {tab === "profile" && (
-            <div className="bg-white rounded-2xl p-7 card-shadow border border-border/40">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-12 h-12 rounded-2xl bg-amber-100 flex items-center justify-center">
-                  <Shield className="h-6 w-6 text-amber-600" />
+            <div className="bg-white rounded-2xl p-6 md:p-8 card-shadow border border-border/40 max-w-3xl mx-auto">
+              <div className="flex items-center gap-4 mb-6 pb-6 border-b border-border/50">
+                <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center">
+                  <Shield className="h-8 w-8 text-primary" />
                 </div>
                 <div>
-                  <h2 className="font-bold text-foreground">Informations de l'association</h2>
-                  <p className="text-xs text-muted-foreground">Visibles par les adoptants potentiels</p>
+                  <h2 className="text-xl font-bold text-foreground">Informations de l'association</h2>
+                  <p className="text-sm text-muted-foreground">Ces informations seront visibles par le public.</p>
                 </div>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -149,7 +171,7 @@ export default function DashboardAssocPage() {
               </div>
 
               {showAnimalForm && (
-                <div className="bg-white rounded-2xl p-6 card-shadow border border-primary/20">
+                <div className="bg-white rounded-2xl p-6 card-shadow border border-primary/20 max-w-3xl">
                   <h3 className="font-bold text-foreground mb-4">Nouvel animal</h3>
                   <div className="grid grid-cols-2 gap-3">
                     {[
@@ -304,6 +326,145 @@ export default function DashboardAssocPage() {
               )}
             </div>
           )}
+
+          {/* Campaigns */}
+          {tab === "campaigns" && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="font-bold text-foreground">Campagnes de vaccination</h2>
+                <Button onClick={() => setShowCampaignForm(v=>!v)} className="btn-gradient btn-ripple font-semibold h-9">
+                  <Plus className="h-4 w-4 mr-1.5" />Créer une campagne
+                </Button>
+              </div>
+
+              {showCampaignForm && (
+                <div className="bg-white rounded-2xl p-6 card-shadow border border-primary/20 max-w-3xl">
+                  <h3 className="font-bold text-foreground mb-4">Nouvelle campagne</h3>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-xs font-semibold text-foreground mb-1">Titre de la campagne</label>
+                      <input type="text" placeholder="Ex: Vaccination solidaire des chats errants"
+                        value={newCampaign.title}
+                        onChange={e => setNewCampaign(c=>({...c,title:e.target.value}))}
+                        className="w-full border border-border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-foreground mb-1">Date limite / Événement (Optionnel)</label>
+                      <input type="date"
+                        value={newCampaign.event_date}
+                        onChange={e => setNewCampaign(c=>({...c,event_date:e.target.value}))}
+                        className="w-full border border-border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-foreground mb-1">Description complète</label>
+                      <textarea rows={3} placeholder="Détails de la campagne, comment participer..."
+                        value={newCampaign.description}
+                        onChange={e => setNewCampaign(c=>({...c,description:e.target.value}))}
+                        className="w-full border border-border rounded-xl px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                    </div>
+                  </div>
+                  <div className="flex gap-3 mt-4">
+                    <Button onClick={handleAddCampaign} disabled={addingCampaign || !newCampaign.title} className="btn-gradient btn-ripple font-bold h-10 flex-1">
+                      {addingCampaign ? "Création..." : "Publier la campagne"}
+                    </Button>
+                    <Button variant="outline" onClick={() => setShowCampaignForm(false)} className="h-10">Annuler</Button>
+                  </div>
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {campaigns.map(c => (
+                  <div key={c.id} className="bg-white rounded-2xl p-5 card-shadow border border-border/40 relative group">
+                    <button onClick={() => removeCampaign(c.id)} className="absolute top-3 right-3 text-muted-foreground hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Trash2 className="h-4 w-4"/>
+                    </button>
+                    <div className="flex items-start gap-3 mb-2">
+                      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                        <Syringe className="h-4 w-4 text-primary" />
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-foreground leading-tight pr-6">{c.title}</h4>
+                        {c.event_date && <p className="text-xs text-primary font-semibold mt-0.5">{new Date(c.event_date).toLocaleDateString()}</p>}
+                      </div>
+                    </div>
+                    <p className="text-sm text-muted-foreground line-clamp-2 mt-2">{c.description}</p>
+                  </div>
+                ))}
+                {campaigns.length === 0 && !showCampaignForm && (
+                  <div className="col-span-full py-10 text-center text-muted-foreground bg-white rounded-2xl border">
+                    <Syringe className="h-10 w-10 mx-auto mb-3 text-muted-foreground opacity-30" />
+                    <p className="text-sm">Aucune campagne en cours.</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Support (Donations & Volunteers) */}
+          {tab === "support" && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              
+              {/* Volunteers Table */}
+              <div className="bg-white rounded-2xl p-6 card-shadow border border-border/40">
+                <div className="flex items-center gap-2 mb-4">
+                  <HandHeart className="h-5 w-5 text-blue-600" />
+                  <h2 className="font-bold text-foreground">Bénévoles en attente ({volunteers.filter(v=>v.status==='pending').length})</h2>
+                </div>
+                
+                <div className="space-y-3">
+                  {volunteers.map(v => (
+                    <div key={v.id} className="p-4 border border-border/50 rounded-xl bg-slate-50">
+                      <div className="flex items-start justify-between gap-3 mb-2">
+                        <div>
+                          <p className="font-bold text-foreground text-sm">{v.profiles?.full_name}</p>
+                          <p className="text-xs text-muted-foreground">{new Date(v.created_at).toLocaleDateString()}</p>
+                        </div>
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                          v.status === 'accepted' ? 'bg-green-100 text-green-700' :
+                          v.status === 'rejected' ? 'bg-red-100 text-red-700' :
+                          'bg-amber-100 text-amber-700'
+                        }`}>
+                          {v.status === 'accepted' ? 'Accepté' : v.status === 'rejected' ? 'Refusé' : 'En attente'}
+                        </span>
+                      </div>
+                      <p className="text-xs bg-white rounded-lg px-3 py-2 border mb-3">{v.message}</p>
+                      
+                      {v.status === "pending" && (
+                        <div className="flex gap-2">
+                          <Button size="sm" className="bg-green-600 hover:bg-green-700 flex-1 h-8" onClick={() => updateVolunteerStatus(v.id, "accepted")}>Accepter</Button>
+                          <Button size="sm" variant="outline" className="text-red-600 flex-1 h-8" onClick={() => updateVolunteerStatus(v.id, "rejected")}>Refuser</Button>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                  {volunteers.length === 0 && <p className="text-sm text-center text-muted-foreground py-6">Aucune candidature de bénévole.</p>}
+                </div>
+              </div>
+
+              {/* Donations List */}
+              <div className="bg-white rounded-2xl p-6 card-shadow border border-border/40 h-fit">
+                <div className="flex items-center gap-2 mb-4">
+                  <Heart className="h-5 w-5 text-rose-500" />
+                  <h2 className="font-bold text-foreground">Historique des dons</h2>
+                </div>
+                
+                <div className="space-y-2">
+                  {donations.map(d => (
+                    <div key={d.id} className="p-3 border border-border/50 rounded-xl flex items-center justify-between bg-slate-50">
+                      <div>
+                        <p className="font-semibold text-sm">{d.profiles?.full_name}</p>
+                        <p className="text-xs text-muted-foreground">{new Date(d.created_at).toLocaleDateString()}</p>
+                      </div>
+                      <span className="font-black text-rose-600 bg-rose-100 px-3 py-1 rounded-full">+{d.amount}€</span>
+                    </div>
+                  ))}
+                  {donations.length === 0 && <p className="text-sm text-center text-muted-foreground py-6">Aucun don reçu pour le moment.</p>}
+                </div>
+              </div>
+              
+            </div>
+          )}
+
         </div>
       </main>
       <Footer />

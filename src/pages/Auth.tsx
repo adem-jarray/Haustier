@@ -50,9 +50,16 @@ const Auth = () => {
     setLoading(true);
 
     if (isLogin) {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) toast({ title: "Erreur de connexion", description: error.message, variant: "destructive" });
-      else navigate("/");
+      else {
+        // Redirect based on role stored in user metadata
+        const userRole = data.user?.user_metadata?.role ?? "user";
+        if (userRole === "admin") navigate("/dashboard/admin");
+        else if (userRole === "veterinaire") navigate("/dashboard/vet");
+        else if (userRole === "association") navigate("/dashboard/association");
+        else navigate("/");
+      }
     } else {
       const metadata: Record<string, string> = { full_name: fullName, role };
       if (role === "veterinaire") {
@@ -75,7 +82,10 @@ const Auth = () => {
             ? "Votre profil est maintenant visible dans la recherche Haustier !"
             : "Bienvenue sur Haustier !",
         });
-        navigate("/");
+        // Redirect based on selected role
+        if (role === "veterinaire") navigate("/dashboard/vet");
+        else if (role === "association") navigate("/dashboard/association");
+        else navigate("/");
       }
     }
     setLoading(false);

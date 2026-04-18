@@ -21,7 +21,7 @@ const STATUS_FR: Record<string, string> = {
 };
 
 export default function DashboardVetPage() {
-  const { user } = useAuth();
+  const { user, role } = useAuth();
   const navigate = useNavigate();
   const [tab, setTab] = useState<"profile"|"slots"|"appointments"|"posts">("profile");
 
@@ -37,7 +37,7 @@ export default function DashboardVetPage() {
   // New slot form
   const [newSlot, setNewSlot] = useState({ day_of_week: 1, start_time: "09:00", end_time: "17:00" });
 
-  if (!user) { navigate("/auth"); return null; }
+  if (!user || role !== "veterinaire") { navigate("/"); return null; }
   if (vetLoading) return (
     <div className="min-h-screen flex items-center justify-center">
       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />

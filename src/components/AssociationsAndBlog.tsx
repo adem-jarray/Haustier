@@ -100,6 +100,9 @@ const AnimalModal = ({ animal, onClose, onViewAssoc }: { animal: AnimalEntry; on
   );
 };
 
+import { DonationModal } from "./DonationModal";
+import { VolunteerModal } from "./VolunteerModal";
+
 // ─── ASSOCIATION PROFILE ──────────────────────────────────────────────────────
 const AssociationProfile = ({ assoc, onBack }: { assoc: AssocEntry; onBack: () => void }) => {
   const profileRef = React.useRef<HTMLDivElement>(null);
@@ -110,6 +113,8 @@ const AssociationProfile = ({ assoc, onBack }: { assoc: AssocEntry; onBack: () =
   const { user } = useAuth();
   const { favAssocs, toggleAssoc } = useFavorites();
   const [loginPrompt, setLoginPrompt] = useState(false);
+  const [donateModal, setDonateModal] = useState(false);
+  const [volunteerModal, setVolunteerModal] = useState(false);
   const [selectedAnimal, setSelectedAnimal] = useState<AnimalEntry | null>(null);
   const assocAnimals = allAnimals.filter(a => assoc.animalIds.includes(a.id));
   const isFav = favAssocs.includes(assoc.id);
@@ -221,13 +226,21 @@ const AssociationProfile = ({ assoc, onBack }: { assoc: AssocEntry; onBack: () =
                   </li>
                 </ul>
               </div>
-              <div className="bg-primary/5 rounded-2xl p-6 border border-primary/20">
-                <h2 className="text-lg font-bold text-foreground mb-2">Soutenir l'association</h2>
-                <p className="text-sm text-muted-foreground mb-4">Votre aide permet de sauver des animaux et financer les soins vétérinaires.</p>
-                <Button className="w-full font-bold" onClick={() => alert(`Merci pour votre soutien à ${assoc.name} ! La fonctionnalité de don arrive bientôt.`)}>
+              <div className="bg-white rounded-2xl border border-border/40 shadow-sm p-6 mb-8 text-center sm:text-left">
+                <h3 className="text-lg font-bold text-foreground mb-2">Soutenir {assoc.name}</h3>
+                <p className="text-sm text-muted-foreground mb-6">Votre aide est précieuse pour continuer notre mission.</p>
+                <Button className="w-full font-bold bg-rose-500 hover:bg-rose-600 text-white" onClick={() => setDonateModal(true)}>
                   <Heart className="mr-2 h-4 w-4" /> Faire un don
                 </Button>
-                <Button variant="outline" className="w-full mt-3 font-bold" onClick={() => alert("Merci pour votre intérêt !")}>Devenir bénévole</Button>
+                <Button variant="outline" className="w-full mt-3 font-bold" onClick={() => setVolunteerModal(true)}>Devenir bénévole</Button>
+              </div>
+
+              {/* Informational */}
+              <div className="bg-white rounded-2xl border border-border/40 shadow-sm p-6">
+                <h3 className="text-lg font-bold text-foreground mb-4">Informations</h3>
+                <ul className="space-y-3 text-sm text-muted-foreground">
+                  <li className="flex items-center gap-3"><Clock className="h-4 w-4 text-primary" /> Lundi - Samedi : 9h - 18h</li>
+                </ul>
               </div>
             </div>
           </div>
@@ -236,6 +249,8 @@ const AssociationProfile = ({ assoc, onBack }: { assoc: AssocEntry; onBack: () =
 
       {/* Animal modal opened from within the profile — no association link needed */}
       {selectedAnimal && <AnimalModal animal={selectedAnimal} onClose={() => setSelectedAnimal(null)} />}
+      {donateModal && <DonationModal assoc={assoc} onClose={() => setDonateModal(false)} />}
+      {volunteerModal && <VolunteerModal assoc={assoc} onClose={() => setVolunteerModal(false)} />}
       {loginPrompt && <LoginPrompt action="ajouter un favori" onClose={() => setLoginPrompt(false)} />}
     </>
   );

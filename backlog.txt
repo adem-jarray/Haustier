@@ -1,0 +1,40 @@
+MODÈLE DE BACKLOG PRODUIT DE HAUSTIER  
+ 
+ID EN TANT QUE…  JE SOUHAITE…  DANS LE BUT DE…  PRIORITÉ  SPRINT  STATUT  
+0 Visiteur  Parcourir les animaux disponibles  Découvrir les options d’adoption  Élevée  1 Terminé  
+0 Visiteur  Voir la liste des vétérinaires  D’identifier des professionnels  Faible  1 Terminé  
+0 Visiteur  Consulter les articles  D’obtenir des informations  Moyenne  1 Terminé  
+0 Visiteur  M’inscrire ou me connecter  D’accéder à plus de fonctionnalités  Élevée  1 Terminé  
+0 Visiteur  Consulter les associations  Découvrir les associations actives  Faible  1 Terminé  
+1 Utilisateur  Me connecter  D’accéder à mon compte  Moyenne  2 Terminé  
+1 Utilisateur  Déconnecter  Sécuriser mon compte.  Moyenne  2 Terminé  
+1 Utilisateur  Ajouter un animal /vétérinaire/associtation  en favori  De le retrouver facilement  Élevée  2 Terminé  
+1 Utilisateur  Consulter mes favoris  Revoir les animaux  Faible  2 Terminé  
+1 Utilisateur  Contacter une association  D’adopter un animal  Élevée  3 Terminé  
+1 Utilisateur  Faire une demande d'adoption  Adopter un animal  Moyenne  3 Terminé  
+1 Utilisateur  Prendre rendez ‑vous chez un v étérinaire  Obtenir une consultation  Faible  3 Terminé  
+1 Utilisateur  Faire un don à une association  Soutenir les actions de l'association  Moyenne  3 Terminé  
+1 Utilisateur  Devenir bénévole  Participer aux activités de l'association  Élevée  3 Terminé  
+1 Utilisateur  Consulter mes rendez -vous  Suivre mes consultations  Élevée  4 Terminé  
+2 Vétérinaire  Gérer mon profil  D’être visible  Faible  4 Terminé  
+2 Vétérinaire  Recevoir des demandes de rendez -vous  De gérer mes consultations  Élevée  4 Terminé  
+2 Vétérinaire  Accepter/refuser un rendez -vous  D’organiser mon planning  Faible  4 Terminé  
+2 Vétérinaire  Affiché sur une carte  D’être facilement trouvé  Moyenne  4 Terminé  
+2 Vétérinaire  Publier des conseils ou actualités  (post)  Partager des informations utiles  Élevée  4 Terminé  
+0 Visiteur  Visualiser les vétérinaires sur une carte  De comprendre leur localisation  Faible  4 Terminé  
+3 Association  Gérer un animal d’adoption  Dans le but de proposer à l’adoption  Élevée  5 Terminé  
+3 Association  Être visible sur la plateforme  Dans le but de faire connaître mes actions  Élevée  5 Terminé  
+3 Association  Gérer mon profil  D’être visible  Moyenne  5 Terminé  
+3 Association  Traiter les demandes d'adoption  Sélectionner les adoptants  Élevée  5 Terminé  
+3 Association  Gérer les campagnes de vaccination  Informer les utilisateurs  Faible  5 Terminé  
+99 Administrateur  Valider les comptes vétérinaires  Garantir l’authenticité des vétérinaires  Élevée  6 Terminé  
+99 Administrateur  Valider les comptes associations  Garantir la fiabilité des associations  Moyenne  6 Terminé  
+99 Administrateur  Modérer les publications  Assurer le respect des règles  Élevée  6 Terminé  
+99 Administrateur  Gérer les articles du blog  Maintenir le contenu du site  Faible  6 Terminé  
+TOTAL  31  
+ 
+  
+ 
+ 
+ 
+ 

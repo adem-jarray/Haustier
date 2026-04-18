@@ -120,12 +120,13 @@ const VetCard = ({
 };
 
 const VetsSection = () => {
-  const { user } = useAuth();
+  const { user, role } = useAuth();
   const { favVets, toggleVet } = useFavorites();
   const { allVets } = useDynamicData();
   const [profileVet, setProfileVet] = useState<VetEntry | null>(null);
   const [bookingVet, setBookingVet] = useState<VetEntry | null>(null);
   const [loginPrompt, setLoginPrompt] = useState<string | null>(null);
+  const [rolePrompt, setRolePrompt] = useState(false);
   const [search, setSearch] = useState("");
   const [specialtyFilter, setSpecialtyFilter] = useState("Tous");
   const [expanded, setExpanded] = useState(false);
@@ -146,6 +147,7 @@ const VetsSection = () => {
   const handleRDV = (vet: VetEntry, e: React.MouseEvent) => {
     e.stopPropagation();
     if (!user) { setLoginPrompt("prendre un rendez-vous"); return; }
+    if (role !== "user") { setRolePrompt(true); return; }
     setBookingVet(vet);
   };
 
@@ -266,6 +268,7 @@ const VetsSection = () => {
           onClose={() => setProfileVet(null)}
           onRDV={() => {
             if (!user) { setLoginPrompt("prendre un rendez-vous"); return; }
+            if (role !== "user") { setRolePrompt(true); return; }
             setBookingVet(profileVet);
           }}
           vetDbId={(profileVet as any)?.dbId ?? null}
@@ -273,6 +276,21 @@ const VetsSection = () => {
       )}
       {bookingVet && <BookingModal vet={bookingVet} vetDbId={(bookingVet as any).dbId ?? null} onClose={() => setBookingVet(null)} />}
       {loginPrompt && <LoginPrompt action={loginPrompt} onClose={() => setLoginPrompt(null)} />}
+      {rolePrompt && (
+        <div className="modal-backdrop" onClick={() => setRolePrompt(false)}>
+          <div className="bg-white rounded-2xl shadow-large max-w-sm w-full p-8 text-center" onClick={e => e.stopPropagation()}>
+            <div className="w-16 h-16 rounded-full bg-amber-100 flex items-center justify-center mx-auto mb-4">
+              <Stethoscope className="h-8 w-8 text-amber-600" />
+            </div>
+            <h3 className="text-xl font-bold text-foreground mb-2">Réservé aux patients</h3>
+            <p className="text-muted-foreground text-sm mb-6">
+              La prise de rendez-vous est réservée aux comptes patients (utilisateur).
+              Connectez-vous avec un compte utilisateur pour prendre un RDV.
+            </p>
+            <Button variant="outline" onClick={() => setRolePrompt(false)} className="w-full font-semibold">Fermer</Button>
+          </div>
+        </div>
+      )}
     </>
   );
 };

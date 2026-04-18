@@ -397,9 +397,8 @@ const FavoritesPanel = ({ onClose }: { onClose: () => void }) => {
 
 // ─── USER MENU ────────────────────────────────────────────────────────────────
 const UserMenu = ({ onShowFavorites }: { onShowFavorites: () => void }) => {
-  const { user, signOut } = useAuth();
+  const { user, role, signOut } = useAuth();
   const [open, setOpen] = useState(false);
-  const role = user?.user_metadata?.role || "user";
   const roleLabel = role === "veterinaire" ? "Vétérinaire" : role === "association" ? "Association" : "Utilisateur";
   const roleBg = role === "veterinaire" ? "bg-blue-100 text-blue-700" : role === "association" ? "badge-available" : "bg-primary/10 text-primary";
 
@@ -432,16 +431,6 @@ const UserMenu = ({ onShowFavorites }: { onShowFavorites: () => void }) => {
               <span className={`inline-block mt-2.5 text-xs font-bold px-2.5 py-1 rounded-full ${roleBg}`}>{roleLabel}</span>
             </div>
             <div className="p-2">
-              <Link to="/mes-rendez-vous" onClick={() => setOpen(false)}
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-accent/60 transition-colors text-left">
-                <Calendar className="h-4 w-4 text-primary" />
-                <span className="text-sm font-semibold text-foreground">Mes rendez-vous</span>
-              </Link>
-              <button onClick={() => { setOpen(false); onShowFavorites(); }}
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-accent/60 transition-colors text-left">
-                <Heart className="h-4 w-4 text-rose-500" />
-                <span className="text-sm font-semibold text-foreground">Mes favoris</span>
-              </button>
               {role === "user" && (
                 <Link to="/mes-rdv" onClick={() => setOpen(false)}
                   className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-accent/60 transition-colors text-left">
@@ -449,15 +438,29 @@ const UserMenu = ({ onShowFavorites }: { onShowFavorites: () => void }) => {
                   <span className="text-sm font-semibold text-foreground">Mes rendez-vous</span>
                 </Link>
               )}
+              {role === "user" && (
+                <button onClick={() => { setOpen(false); onShowFavorites(); }}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-accent/60 transition-colors text-left">
+                  <Heart className="h-4 w-4 text-rose-500" />
+                  <span className="text-sm font-semibold text-foreground">Mes favoris</span>
+                </button>
+              )}
               {(role === "veterinaire" || role === "association") && (
-                <Link
-                  to={role === "veterinaire" ? "/dashboard/vet" : "/dashboard/association"}
-                  onClick={() => setOpen(false)}
-                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-accent/60 transition-colors text-left"
-                >
-                  <LayoutDashboard className="h-4 w-4 text-primary" />
-                  <span className="text-sm font-semibold text-foreground">Mon espace pro</span>
-                </Link>
+                <>
+                  <button onClick={() => { setOpen(false); onShowFavorites(); }}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-accent/60 transition-colors text-left">
+                    <Heart className="h-4 w-4 text-rose-500" />
+                    <span className="text-sm font-semibold text-foreground">Mes favoris</span>
+                  </button>
+                  <Link
+                    to={role === "veterinaire" ? "/dashboard/vet" : "/dashboard/association"}
+                    onClick={() => setOpen(false)}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-accent/60 transition-colors text-left"
+                  >
+                    <LayoutDashboard className="h-4 w-4 text-primary" />
+                    <span className="text-sm font-semibold text-foreground">Mon espace pro</span>
+                  </Link>
+                </>
               )}
               <div className="h-px bg-border/60 my-1.5" />
               <button onClick={() => { signOut(); setOpen(false); }}
@@ -475,7 +478,7 @@ const UserMenu = ({ onShowFavorites }: { onShowFavorites: () => void }) => {
 
 // ─── NAVBAR ───────────────────────────────────────────────────────────────────
 const Navbar = () => {
-  const { user } = useAuth();
+  const { user, role } = useAuth();
   const { heartPulse } = useFavorites();
   const [showFavorites, setShowFavorites] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -494,11 +497,39 @@ const Navbar = () => {
 
   const isHome = location.pathname === "/";
 
-  const navItems = [
-    { label: "Vétérinaires", path: "/veterinaires", scrollId: "veterinaires" },
-    { label: "Animaux & Adoption", path: "/animaux", scrollId: "adoption" },
-    { label: "Blog & Conseils", path: "/blog", scrollId: "blog" },
-  ];
+  // Role-aware navigation items
+  const navItems = (() => {
+    const publicItems = [
+      { label: "Vétérinaires", path: "/veterinaires" },
+      { label: "Animaux & Adoption", path: "/animaux" },
+      { label: "Blog & Conseils", path: "/blog" },
+    ];
+
+    if (!user) return publicItems;
+
+    switch (role) {
+      case "admin":
+        return [
+          { label: "Dashboard Admin", path: "/dashboard/admin" },
+          { label: "Vétérinaires", path: "/veterinaires" },
+          { label: "Animaux & Adoption", path: "/animaux" },
+        ];
+      case "veterinaire":
+        return [
+          { label: "Mon Dashboard", path: "/dashboard/vet" },
+          { label: "Vétérinaires", path: "/veterinaires" },
+          { label: "Blog & Conseils", path: "/blog" },
+        ];
+      case "association":
+        return [
+          { label: "Mon Dashboard", path: "/dashboard/association" },
+          { label: "Animaux & Adoption", path: "/animaux" },
+          { label: "Blog & Conseils", path: "/blog" },
+        ];
+      default:
+        return publicItems;
+    }
+  })();
 
   const handleNavClick = (item: typeof navItems[0]) => {
     navigate(item.path);
@@ -648,7 +679,79 @@ const Navbar = () => {
 };
 
 // ─── HERO ─────────────────────────────────────────────────────────────────────
-const HeroSection = () => (
+const HeroSection = () => {
+  const { user, role } = useAuth();
+
+  // Role-specific CTA buttons
+  const renderCTAs = () => {
+    if (user && role === "admin") {
+      return (
+        <div className="flex flex-wrap gap-4 animate-reveal-up" style={{ animationDelay: "0.4s" }}>
+          <Link to="/dashboard/admin">
+            <Button size="lg"
+              className="btn-gradient btn-ripple text-base font-bold px-8 h-14 rounded-xl shadow-xl">
+              <Shield className="mr-2 h-5 w-5" />Gérer la plateforme
+            </Button>
+          </Link>
+        </div>
+      );
+    }
+    if (user && role === "veterinaire") {
+      return (
+        <div className="flex flex-wrap gap-4 animate-reveal-up" style={{ animationDelay: "0.4s" }}>
+          <Link to="/dashboard/vet">
+            <Button size="lg"
+              className="btn-gradient btn-ripple text-base font-bold px-8 h-14 rounded-xl shadow-xl">
+              <LayoutDashboard className="mr-2 h-5 w-5" />Accéder à mon dashboard
+            </Button>
+          </Link>
+          <Link to="/dashboard/vet">
+            <Button size="lg" variant="outline"
+              className="text-base font-bold px-8 h-14 rounded-xl bg-white/10 border-white/28 text-white hover:bg-white/18 hover:text-white hover:border-white/45 backdrop-blur-sm">
+              <Calendar className="mr-2 h-5 w-5" />Gérer mes rendez-vous
+            </Button>
+          </Link>
+        </div>
+      );
+    }
+    if (user && role === "association") {
+      return (
+        <div className="flex flex-wrap gap-4 animate-reveal-up" style={{ animationDelay: "0.4s" }}>
+          <Link to="/dashboard/association">
+            <Button size="lg"
+              className="btn-gradient btn-ripple text-base font-bold px-8 h-14 rounded-xl shadow-xl">
+              <LayoutDashboard className="mr-2 h-5 w-5" />Accéder à mon dashboard
+            </Button>
+          </Link>
+          <Link to="/dashboard/association">
+            <Button size="lg" variant="outline"
+              className="text-base font-bold px-8 h-14 rounded-xl bg-white/10 border-white/28 text-white hover:bg-white/18 hover:text-white hover:border-white/45 backdrop-blur-sm">
+              <Heart className="mr-2 h-5 w-5" />Gérer mes animaux
+            </Button>
+          </Link>
+        </div>
+      );
+    }
+    // Default: visitor or user role
+    return (
+      <div className="flex flex-wrap gap-4 animate-reveal-up" style={{ animationDelay: "0.4s" }}>
+        <Link to="/veterinaires">
+          <Button size="lg"
+            className="btn-gradient btn-ripple text-base font-bold px-8 h-14 rounded-xl shadow-xl">
+            <Search className="mr-2 h-5 w-5" />Trouver un vétérinaire
+          </Button>
+        </Link>
+        <Link to="/animaux">
+          <Button size="lg" variant="outline"
+            className="text-base font-bold px-8 h-14 rounded-xl bg-white/10 border-white/28 text-white hover:bg-white/18 hover:text-white hover:border-white/45 backdrop-blur-sm">
+            <Heart className="mr-2 h-5 w-5" />Adopter un animal
+          </Button>
+        </Link>
+      </div>
+    );
+  };
+
+  return (
   <section className="relative min-h-screen flex items-center overflow-hidden pt-16">
     {/* Background */}
     <div className="absolute inset-0">
@@ -698,23 +801,16 @@ const HeroSection = () => (
         </h1>
 
         <p className="text-lg md:text-xl text-white/78 mb-11 leading-relaxed max-w-xl font-medium animate-reveal-up" style={{ animationDelay: "0.3s" }}>
-          Trouvez des vétérinaires de confiance, adoptez un animal et rejoignez des associations engagées pour le bien-être animal.
+          {user && role === "admin"
+            ? "Bienvenue sur l'espace d'administration. Modérez le contenu, validez les professionnels et assurez la qualité de la plateforme."
+            : user && role === "veterinaire"
+            ? "Gérez votre profil, vos créneaux et vos rendez-vous directement depuis votre espace professionnel."
+            : user && role === "association"
+            ? "Gérez vos animaux, publiez des campagnes et suivez les demandes d'adoption depuis votre espace."
+            : "Trouvez des vétérinaires de confiance, adoptez un animal et rejoignez des associations engagées pour le bien-être animal."}
         </p>
 
-        <div className="flex flex-wrap gap-4 animate-reveal-up" style={{ animationDelay: "0.4s" }}>
-          <Link to="/veterinaires">
-            <Button size="lg"
-              className="btn-gradient btn-ripple text-base font-bold px-8 h-14 rounded-xl shadow-xl">
-              <Search className="mr-2 h-5 w-5" />Trouver un vétérinaire
-            </Button>
-          </Link>
-          <Link to="/animaux">
-            <Button size="lg" variant="outline"
-              className="text-base font-bold px-8 h-14 rounded-xl bg-white/10 border-white/28 text-white hover:bg-white/18 hover:text-white hover:border-white/45 backdrop-blur-sm">
-              <Heart className="mr-2 h-5 w-5" />Adopter un animal
-            </Button>
-          </Link>
-        </div>
+        {renderCTAs()}
 
 
       </div>
@@ -728,6 +824,7 @@ const HeroSection = () => (
     </div>
   </section>
 );
+};
 
 // ─── FEATURES ─────────────────────────────────────────────────────────────────
 const featureItems = [

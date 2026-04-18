@@ -16,7 +16,7 @@ interface Props {
 }
 
 export function BookingModal({ vet, vetDbId, onClose }: Props) {
-  const { user } = useAuth();
+  const { user, role } = useAuth();
   const { slots, bookedSlots, loading } = useVetAvailability(vetDbId);
 
   const [step, setStep] = useState<"date" | "time" | "reason" | "done">("date");
@@ -83,6 +83,23 @@ export function BookingModal({ vet, vetDbId, onClose }: Props) {
           <Link to="/auth" className="flex-1"><Button className="w-full btn-gradient btn-ripple font-bold">Se connecter</Button></Link>
           <Button variant="outline" onClick={onClose} className="flex-1">Fermer</Button>
         </div>
+      </div>
+    </div>
+  );
+
+  // Professional accounts cannot book — only patient (user) accounts can
+  if (role !== "user") return (
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="bg-white rounded-2xl p-8 max-w-sm w-full text-center card-shadow animate-badge-pop" onClick={e => e.stopPropagation()}>
+        <div className="w-16 h-16 rounded-full bg-amber-100 flex items-center justify-center mx-auto mb-4">
+          <Calendar className="h-8 w-8 text-amber-600" />
+        </div>
+        <h3 className="text-xl font-bold text-foreground mb-2">Réservé aux patients</h3>
+        <p className="text-muted-foreground text-sm mb-6">
+          La prise de rendez-vous est réservée aux comptes patients (utilisateur).
+          Les comptes {role === "veterinaire" ? "vétérinaire" : "association"} ne peuvent pas prendre de rendez-vous.
+        </p>
+        <Button variant="outline" onClick={onClose} className="w-full font-semibold">Fermer</Button>
       </div>
     </div>
   );

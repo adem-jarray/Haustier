@@ -2,9 +2,12 @@ import { createContext, useContext, useEffect, useState, ReactNode } from "react
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
+export type UserRole = "user" | "veterinaire" | "association" | "admin";
+
 interface AuthContextType {
   session: Session | null;
   user: User | null;
+  role: UserRole;
   loading: boolean;
   signOut: () => Promise<void>;
 }
@@ -12,6 +15,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType>({
   session: null,
   user: null,
+  role: "user",
   loading: true,
   signOut: async () => {},
 });
@@ -40,8 +44,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     await supabase.auth.signOut();
   };
 
+  const role: UserRole = (session?.user?.user_metadata?.role as UserRole) ?? "user";
+
   return (
-    <AuthContext.Provider value={{ session, user: session?.user ?? null, loading, signOut }}>
+    <AuthContext.Provider value={{ session, user: session?.user ?? null, role, loading, signOut }}>
       {children}
     </AuthContext.Provider>
   );

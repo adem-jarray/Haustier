@@ -46,8 +46,9 @@ const AdoptionModal = ({
   onViewAssoc: (id: string) => void;
 }) => {
   const assoc = getAssociation(animal.associationId);
-  const { user } = useAuth();
+  const { user, role } = useAuth();
   const [loginPrompt, setLoginPrompt] = useState(false);
+  const [rolePrompt, setRolePrompt] = useState(false);
   const [adoptLoading, setAdoptLoading] = useState(false);
   const [adoptDone, setAdoptDone] = useState(false);
 
@@ -65,6 +66,7 @@ const AdoptionModal = ({
 
   const handleAdopt = async () => {
     if (!user) { setLoginPrompt(true); return; }
+    if (role !== "user") { setRolePrompt(true); return; }
     setAdoptLoading(true);
     await supabase.from("adoption_requests").insert({
       user_id: user.id,
@@ -159,6 +161,21 @@ const AdoptionModal = ({
           action="faire une demande d'adoption"
           onClose={() => setLoginPrompt(false)}
         />
+      )}
+      {rolePrompt && (
+        <div className="modal-backdrop" onClick={() => setRolePrompt(false)} style={{ zIndex: 60 }}>
+          <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-8 text-center" onClick={e => e.stopPropagation()}>
+            <div className="w-16 h-16 rounded-full bg-amber-100 flex items-center justify-center mx-auto mb-4">
+              <Heart className="h-8 w-8 text-amber-600" />
+            </div>
+            <h3 className="text-xl font-bold text-foreground mb-2">Réservé aux utilisateurs</h3>
+            <p className="text-muted-foreground text-sm mb-6">
+              Les demandes d'adoption sont réservées aux comptes utilisateur.
+              Les comptes professionnels ne peuvent pas adopter via la plateforme.
+            </p>
+            <Button variant="outline" onClick={() => setRolePrompt(false)} className="w-full font-semibold">Fermer</Button>
+          </div>
+        </div>
       )}
     </>,
     document.body
