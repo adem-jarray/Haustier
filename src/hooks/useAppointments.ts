@@ -95,31 +95,84 @@ export async function bookAppointment(params: {
 }): Promise<{ error: string | null }> {
   const { vetDbId, date, time, reason, userId, patientName, patientEmail } = params;
 
-  // Insert appointment
-  const { data: appt, error: apptErr } = await supabase
-    .from("appointments")
+  // ─── Step 1: Claim the slot FIRST ──────────────────────────────────
+  // The booked_slots table has UNIQUE(vet_id, booked_date, booked_time),
+  // so if another user already booked this exact slot, the INSERT fails
+  // immediately — preventing any double-booking race condition.
+  const { data: slotData, error: slotErr } = await supabase
+    .from("booked_slots")
     .insert({
+      vet_id: vetDbId,
+      booked_date: date,
+      booked_time: time,
+      // appointment_id will be updated after we create the appointment
+    })
+    .select()
+    .single();
+
+  if (slotErr) {
+    // Duplicate key = someone else already booked this slot
+    if (slotErr.message.includes("duplicate") || slotErr.message.includes("unique") || slotErr.code === "23505") {
+      return { error: "Ce créneau vient d'être réservé par un autre patient. Veuillez choisir un autre horaire." };
+    }
+    return { error: slotErr.message };
+  }
+
+  // ─── Step 2: Create the appointment ────────────────────────────────
+  // Try inserting with patient_name & patient_email first.
+  // If those columns don't exist yet, fall back to inserting without them.
+  let appt: any;
+  let apptErr: any;
+
+  const fullPayload: Record<string, unknown> = {
+    vet_id: vetDbId,
+    user_id: userId,
+    appointment_date: date,
+    appointment_time: time,
+    reason,
+    status: "pending",
+    patient_name: patientName ?? null,
+    patient_email: patientEmail ?? null,
+  };
+
+  const result1 = await supabase
+    .from("appointments")
+    .insert(fullPayload)
+    .select()
+    .single();
+
+  if (result1.error && result1.error.message.includes("schema cache")) {
+    const fallbackPayload: Record<string, unknown> = {
       vet_id: vetDbId,
       user_id: userId,
       appointment_date: date,
       appointment_time: time,
       reason,
       status: "pending",
-      patient_name: patientName ?? null,
-      patient_email: patientEmail ?? null,
-    })
-    .select()
-    .single();
+    };
+    const result2 = await supabase
+      .from("appointments")
+      .insert(fallbackPayload)
+      .select()
+      .single();
+    appt = result2.data;
+    apptErr = result2.error;
+  } else {
+    appt = result1.data;
+    apptErr = result1.error;
+  }
 
-  if (apptErr) return { error: apptErr.message };
+  if (apptErr) {
+    // Rollback: remove the claimed slot since appointment creation failed
+    await supabase.from("booked_slots").delete().eq("id", slotData.id);
+    return { error: apptErr.message };
+  }
 
-  // Mark slot as booked
-  await supabase.from("booked_slots").insert({
-    vet_id: vetDbId,
-    booked_date: date,
-    booked_time: time,
-    appointment_id: appt.id,
-  });
+  // ─── Step 3: Link the appointment to the booked slot ───────────────
+  await supabase
+    .from("booked_slots")
+    .update({ appointment_id: appt.id })
+    .eq("id", slotData.id);
 
   return { error: null };
 }

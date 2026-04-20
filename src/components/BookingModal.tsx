@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { createPortal } from "react-dom";
 import { X, Calendar, Clock, ChevronLeft, ChevronRight, CheckCircle, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
@@ -17,7 +18,7 @@ interface Props {
 
 export function BookingModal({ vet, vetDbId, onClose }: Props) {
   const { user, role } = useAuth();
-  const { slots, bookedSlots, loading } = useVetAvailability(vetDbId);
+  const { slots, bookedSlots, loading, refresh } = useVetAvailability(vetDbId);
 
   const [step, setStep] = useState<"date" | "time" | "reason" | "done">("date");
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -59,7 +60,21 @@ export function BookingModal({ vet, vetDbId, onClose }: Props) {
     if (!user || !selectedDate || !selectedTime || !vetDbId) return;
     setSubmitting(true);
     setError(null);
+
+    // Refresh availability to catch slots taken while user was filling the form
+    await refresh();
     const dateStr = selectedDate.toISOString().split("T")[0];
+
+    // Re-check that the selected time is still available
+    const freshTimes = getAvailableTimesForDate(selectedDate, slots, bookedSlots);
+    if (!freshTimes.includes(selectedTime)) {
+      setError("Ce créneau vient d'être réservé. Veuillez en choisir un autre.");
+      setSelectedTime(null);
+      setStep("time");
+      setSubmitting(false);
+      return;
+    }
+
     const { error: err } = await bookAppointment({
       vetDbId,
       date: dateStr,
@@ -70,12 +85,21 @@ export function BookingModal({ vet, vetDbId, onClose }: Props) {
       patientEmail: user.email ?? undefined,
     });
     setSubmitting(false);
-    if (err) { setError(err); return; }
+    if (err) {
+      // If the slot was taken between our check and the insert, refresh & go back to time picker
+      if (err.includes("créneau") || err.includes("réservé")) {
+        await refresh();
+        setSelectedTime(null);
+        setStep("time");
+      }
+      setError(err);
+      return;
+    }
     setStep("done");
   };
 
   // Not logged in
-  if (!user) return (
+  if (!user) return createPortal(
     <div className="modal-backdrop" onClick={onClose}>
       <div className="bg-white rounded-2xl p-8 max-w-sm w-full text-center card-shadow animate-badge-pop" onClick={e => e.stopPropagation()}>
         <Calendar className="h-12 w-12 text-primary mx-auto mb-4 opacity-70" />
@@ -86,11 +110,12 @@ export function BookingModal({ vet, vetDbId, onClose }: Props) {
           <Button variant="outline" onClick={onClose} className="flex-1">Fermer</Button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 
   // Professional accounts cannot book — only patient (user) accounts can
-  if (role !== "user") return (
+  if (role !== "user") return createPortal(
     <div className="modal-backdrop" onClick={onClose}>
       <div className="bg-white rounded-2xl p-8 max-w-sm w-full text-center card-shadow animate-badge-pop" onClick={e => e.stopPropagation()}>
         <div className="w-16 h-16 rounded-full bg-amber-100 flex items-center justify-center mx-auto mb-4">
@@ -103,13 +128,14 @@ export function BookingModal({ vet, vetDbId, onClose }: Props) {
         </p>
         <Button variant="outline" onClick={onClose} className="w-full font-semibold">Fermer</Button>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 
   // No DB record (static vet) — phone fallback
-  if (!vetDbId || (!loading && slots.length === 0)) return (
+  if (!vetDbId || (!loading && slots.length === 0)) return createPortal(
     <div className="modal-backdrop" onClick={onClose}>
-      <div className="bg-white rounded-2xl p-8 max-w-sm w-full card-shadow animate-badge-pop" onClick={e => e.stopPropagation()}>
+      <div className="bg-white rounded-2xl p-8 max-w-sm w-full card-shadow animate-badge-pop relative" onClick={e => e.stopPropagation()}>
         <button onClick={onClose} className="absolute top-4 right-4 w-8 h-8 rounded-full bg-muted flex items-center justify-center"><X className="h-4 w-4" /></button>
         <div className="text-center mb-6">
           <Phone className="h-10 w-10 text-primary mx-auto mb-3" />
@@ -125,10 +151,11 @@ export function BookingModal({ vet, vetDbId, onClose }: Props) {
         </a>
         <p className="text-xs text-muted-foreground text-center mt-4">{vet.hours}</p>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 
-  return (
+  return createPortal(
     <div className="modal-backdrop" onClick={onClose}>
       <div className="bg-white rounded-2xl w-full max-w-md card-shadow animate-badge-pop overflow-hidden" onClick={e => e.stopPropagation()}>
         {/* Header */}
@@ -286,6 +313,7 @@ export function BookingModal({ vet, vetDbId, onClose }: Props) {
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

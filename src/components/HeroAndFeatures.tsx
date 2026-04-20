@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useLayoutEffect } from "react";
-import { Heart, Search, Stethoscope, Users, BookOpen, Phone, Syringe, LogOut, User, Star, MapPin, ChevronDown, X, Clock, ExternalLink, ArrowLeft, Calendar, Sparkles, Shield, LayoutDashboard, CalendarCheck } from "lucide-react";
+import { createPortal } from "react-dom";
+import { Heart, Search, Stethoscope, Users, BookOpen, Phone, Syringe, LogOut, User, Star, MapPin, ChevronDown, X, Clock, ExternalLink, ArrowLeft, Calendar, Sparkles, Shield, LayoutDashboard, CalendarCheck, Bell } from "lucide-react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import heroPets from "@/assets/hero-pets.png";
 import logo from "@/assets/logo.png";
@@ -10,6 +11,7 @@ import { animals, vets, associations } from "@/data/siteData";
 import type { VetEntry, AnimalEntry, AssocEntry } from "@/hooks/useDynamicData";
 import FavHeart from "@/components/FavHeart";
 import PostsSection from "@/components/PostsSection";
+import { useNotifications } from "@/hooks/useNotifications";
 
 export const scrollTo = (id: string) => {
   const el = document.getElementById(id);
@@ -52,7 +54,7 @@ export const VetProfile = ({ vet, onClose, onRDV }: { vet: VetEntry; onClose: ()
   useLayoutEffect(() => {
     const el = profileRef.current;
     if (el) { el.scrollTop = 0; }
-  }, []); // empty deps = run once synchronously on mount, before paint
+  }, []);
   const { user } = useAuth();
   const { favVets, toggleVet } = useFavorites();
   const isFav = favVets.includes(String(vet.id)) && !!user;
@@ -63,13 +65,12 @@ export const VetProfile = ({ vet, onClose, onRDV }: { vet: VetEntry; onClose: ()
     toggleVet(vet.id, vet.name);
   };
 
-  return (
-    <div ref={profileRef} className="fixed inset-0 z-50 bg-background overflow-y-auto">
-      {/* Hero banner — richer gradient */}
+  const content = (
+    <div ref={profileRef} className="fixed inset-0 z-[99990] bg-background overflow-y-auto animate-vet-profile-in">
+      {/* Hero banner */}
       <div className="relative h-64 overflow-hidden" style={{
         background: "linear-gradient(145deg, hsl(158 48% 12%), hsl(158 42% 20%), hsl(36 70% 38%))"
       }}>
-        {/* Decorative circles */}
         <div className="absolute -top-16 -right-16 w-64 h-64 rounded-full opacity-10 bg-white" />
         <div className="absolute bottom-0 left-0 w-96 h-32 opacity-5 bg-white" style={{ borderRadius: "0 100% 0 0" }} />
         <div className="absolute inset-0 flex items-center justify-end pr-16 opacity-8">
@@ -81,7 +82,6 @@ export const VetProfile = ({ vet, onClose, onRDV }: { vet: VetEntry; onClose: ()
         <div className="absolute top-5 right-5 z-10">
           <FavHeart isFav={isFav} onClick={handleFav} />
         </div>
-        {/* Accent bar at bottom */}
         <div className="absolute bottom-0 left-0 right-0 h-1 vet-accent-bar" />
       </div>
 
@@ -197,6 +197,8 @@ export const VetProfile = ({ vet, onClose, onRDV }: { vet: VetEntry; onClose: ()
       </div>
     </div>
   );
+
+  return createPortal(content, document.body);
 };
 
 // ─── FAVORITES PANEL ─────────────────────────────────────────────────────────
@@ -215,7 +217,7 @@ const FavoritesPanel = ({ onClose }: { onClose: () => void }) => {
   const tabs = [["animals", "Animaux", favAnimals.length], ["vets", "Vétérinaires", favVets.length], ["assocs", "Associations", favAssocs.length]] as const;
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end" onClick={onClose}>
+    <div className="fixed inset-0 z-[99990] flex justify-end" onClick={onClose}>
       <div className="w-full max-w-md bg-card h-full shadow-2xl border-l border-border/60 overflow-y-auto animate-slide-right" onClick={e => e.stopPropagation()}>
         <div className="p-6 border-b border-border/50 flex items-center justify-between sticky top-0 bg-card/95 backdrop-blur-md z-10">
           <div>
@@ -476,6 +478,134 @@ const UserMenu = ({ onShowFavorites }: { onShowFavorites: () => void }) => {
   );
 };
 
+// ─── NOTIFICATION BELL ────────────────────────────────────────────────────────
+const STATUS_NOTIF_COLORS: Record<string, string> = {
+  confirmed: "bg-green-100 text-green-700 border-green-200",
+  cancelled: "bg-red-100 text-red-700 border-red-200",
+  completed: "bg-blue-100 text-blue-700 border-blue-200",
+};
+const STATUS_NOTIF_FR: Record<string, string> = {
+  confirmed: "Confirmé", cancelled: "Annulé", completed: "Terminé"
+};
+const STATUS_NOTIF_MSG: Record<string, string> = {
+  confirmed: "a confirmé votre rendez-vous",
+  cancelled: "a annulé votre rendez-vous",
+  completed: "a marqué votre rendez-vous comme terminé",
+};
+
+const NotificationBell = ({ isLight }: { isLight: boolean }) => {
+  const { notifications, unreadCount, markSeen, markAllSeen } = useNotifications();
+  const [open, setOpen] = useState(false);
+  const navigate = useNavigate();
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => { setOpen(!open); }}
+        className={`relative p-2 rounded-lg transition-colors duration-200 hover:bg-white/8 ${
+          isLight ? "text-white/85 hover:text-white" : "text-muted-foreground hover:text-primary"
+        }`}
+        aria-label="Notifications"
+      >
+        <Bell className="h-5 w-5" />
+        {unreadCount > 0 && (
+          <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] flex items-center justify-center bg-red-500 text-white text-[10px] font-bold rounded-full px-1 animate-badge-pop">
+            {unreadCount > 9 ? "9+" : unreadCount}
+          </span>
+        )}
+      </button>
+
+      {open && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+          <div className="absolute right-0 top-12 w-80 bg-white border border-border/60 rounded-2xl shadow-xl z-50 overflow-hidden animate-fade-in">
+            <div className="p-4 border-b border-border/50 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Bell className="h-4 w-4 text-primary" />
+                <h3 className="font-bold text-foreground text-sm">Notifications</h3>
+                {unreadCount > 0 && (
+                  <span className="bg-red-100 text-red-600 text-xs font-bold px-2 py-0.5 rounded-full">{unreadCount}</span>
+                )}
+              </div>
+              {unreadCount > 0 && (
+                <button
+                  onClick={() => markAllSeen()}
+                  className="text-xs font-semibold text-primary hover:underline"
+                >
+                  Tout marquer comme lu
+                </button>
+              )}
+            </div>
+
+            <div className="max-h-80 overflow-y-auto">
+              {notifications.length === 0 ? (
+                <div className="text-center py-10 px-4">
+                  <Bell className="h-8 w-8 mx-auto mb-2 text-muted-foreground opacity-30" />
+                  <p className="text-sm text-muted-foreground">Aucune notification</p>
+                </div>
+              ) : (
+                notifications.map(n => (
+                  <button
+                    key={n.id}
+                    onClick={() => {
+                      markSeen(n.appointment_id);
+                      setOpen(false);
+                      navigate("/mes-rdv");
+                    }}
+                    className={`w-full text-left px-4 py-3.5 border-b border-border/30 hover:bg-accent/40 transition-colors ${
+                      !n.seen ? "bg-primary/[0.03]" : ""
+                    }`}
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5 ${
+                        n.status === "confirmed" ? "bg-green-100" :
+                        n.status === "cancelled" ? "bg-red-100" : "bg-blue-100"
+                      }`}>
+                        <Stethoscope className={`h-4 w-4 ${
+                          n.status === "confirmed" ? "text-green-600" :
+                          n.status === "cancelled" ? "text-red-600" : "text-blue-600"
+                        }`} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm leading-snug">
+                          <span className="font-bold text-foreground">{n.vet_name}</span>{" "}
+                          <span className="text-muted-foreground">{STATUS_NOTIF_MSG[n.status] ?? "a mis à jour votre rendez-vous"}</span>
+                        </p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${STATUS_NOTIF_COLORS[n.status]}`}>
+                            {STATUS_NOTIF_FR[n.status]}
+                          </span>
+                          <span className="text-[10px] text-muted-foreground">
+                            {new Date(n.appointment_date).toLocaleDateString("fr-FR", { day: "numeric", month: "short" })} à {n.appointment_time?.slice(0, 5)}
+                          </span>
+                        </div>
+                        {!n.seen && (
+                          <span className="inline-block mt-1 w-2 h-2 rounded-full bg-primary" />
+                        )}
+                      </div>
+                    </div>
+                  </button>
+                ))
+              )}
+            </div>
+
+            {notifications.length > 0 && (
+              <div className="p-3 border-t border-border/50">
+                <button
+                  onClick={() => { setOpen(false); navigate("/mes-rdv"); }}
+                  className="w-full text-center text-xs font-semibold text-primary hover:underline py-1"
+                >
+                  Voir tous mes rendez-vous
+                </button>
+              </div>
+            )}
+          </div>
+        </>
+      )}
+    </div>
+  );
+};
+
 // ─── NAVBAR ───────────────────────────────────────────────────────────────────
 const Navbar = () => {
   const { user, role } = useAuth();
@@ -492,12 +622,10 @@ const Navbar = () => {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  // Close mobile menu on route change
   useEffect(() => { setMobileOpen(false); }, [location.pathname]);
 
   const isHome = location.pathname === "/";
 
-  // Role-aware navigation items
   const navItems = (() => {
     const publicItems = [
       { label: "Vétérinaires", path: "/veterinaires" },
@@ -553,7 +681,6 @@ const Navbar = () => {
     <>
       <nav className={`fixed top-0 left-0 right-0 z-50 border-b transition-all duration-300 ${navBg}`}>
         <div className="container mx-auto flex items-center justify-between h-16 px-4">
-          {/* Logo */}
           <Link to="/" className="flex items-center gap-2.5 group shrink-0">
             <img src={logo} alt="Haustier" className="h-11 w-11 object-contain group-hover:scale-110 transition-transform duration-300" />
             <span className={`text-2xl font-bold tracking-tight transition-colors duration-300 ${logoColor}`} style={{ fontFamily: "Fraunces, serif" }}>
@@ -561,7 +688,6 @@ const Navbar = () => {
             </span>
           </Link>
 
-          {/* Desktop nav */}
           <div className="hidden md:flex items-center gap-1">
             {navItems.map((item) => (
               <button
@@ -588,12 +714,16 @@ const Navbar = () => {
                 Favoris
               </button>
             )}
+            {user && role === "user" && (
+              <NotificationBell isLight={isHome && !scrolled} />
+            )}
           </div>
 
-          {/* Desktop auth */}
           <div className="hidden md:flex items-center gap-3">
             {user ? (
-              <UserMenu onShowFavorites={() => setShowFavorites(true)} />
+              <>
+                <UserMenu onShowFavorites={() => setShowFavorites(true)} />
+              </>
             ) : (
               <>
                 <Link to="/auth">
@@ -612,7 +742,6 @@ const Navbar = () => {
             )}
           </div>
 
-          {/* Mobile hamburger */}
           <button
             className={`md:hidden flex flex-col gap-1.5 p-2 rounded-lg transition-colors ${isHome && !scrolled ? "hover:bg-white/10" : "hover:bg-muted"}`}
             onClick={() => setMobileOpen(!mobileOpen)}
@@ -630,7 +759,6 @@ const Navbar = () => {
           </button>
         </div>
 
-        {/* Mobile menu */}
         {mobileOpen && (
           <div className="md:hidden border-t border-border/40 bg-background/97 backdrop-blur-2xl animate-reveal-fade">
             <div className="container mx-auto px-4 py-4 space-y-1">
@@ -654,6 +782,11 @@ const Navbar = () => {
                 >
                   <Heart className="h-4 w-4" /> Favoris
                 </button>
+              )}
+              {user && role === "user" && (
+                <div className="px-2">
+                  <NotificationBell isLight={false} />
+                </div>
               )}
               <div className="pt-3 flex gap-2 border-t border-border/40">
                 {user ? (
@@ -682,7 +815,6 @@ const Navbar = () => {
 const HeroSection = () => {
   const { user, role } = useAuth();
 
-  // Role-specific CTA buttons
   const renderCTAs = () => {
     if (user && role === "admin") {
       return (
@@ -732,7 +864,6 @@ const HeroSection = () => {
         </div>
       );
     }
-    // Default: visitor or user role
     return (
       <div className="flex flex-wrap gap-4 animate-reveal-up" style={{ animationDelay: "0.4s" }}>
         <Link to="/veterinaires">
@@ -752,78 +883,69 @@ const HeroSection = () => {
   };
 
   return (
-  <section className="relative min-h-screen flex items-center overflow-hidden pt-16">
-    {/* Background */}
-    <div className="absolute inset-0">
-      <img src={heroPets} alt="Animaux heureux" className="w-full h-full object-cover object-center" />
-      <div className="absolute inset-0 hero-gradient" />
-      {/* Extra warm vignette */}
-      <div className="absolute inset-0" style={{
-        background: "radial-gradient(ellipse 130% 80% at 15% 65%, transparent 25%, hsl(158 48% 6% / 0.5) 100%)"
-      }} />
-    </div>
+    <section className="relative min-h-screen flex items-center overflow-hidden pt-16">
+      <div className="absolute inset-0">
+        <img src={heroPets} alt="Animaux heureux" className="w-full h-full object-cover object-center" />
+        <div className="absolute inset-0 hero-gradient" />
+        <div className="absolute inset-0" style={{
+          background: "radial-gradient(ellipse 130% 80% at 15% 65%, transparent 25%, hsl(158 48% 6% / 0.5) 100%)"
+        }} />
+      </div>
 
-
-
-    {/* Floating vet card — glassmorphism */}
-    <div className="absolute bottom-32 right-8 hidden xl:block glass-card rounded-2xl px-5 py-4 animate-float" style={{ animationDelay: "1.2s", maxWidth: "220px" }}>
-      <div className="flex items-center gap-3 mb-2.5">
-        <div className="w-10 h-10 rounded-xl bg-primary/25 flex items-center justify-center">
-          <Stethoscope className="h-5 w-5 text-white" />
+      <div className="absolute bottom-32 right-8 hidden xl:block glass-card rounded-2xl px-5 py-4 animate-float" style={{ animationDelay: "1.2s", maxWidth: "220px" }}>
+        <div className="flex items-center gap-3 mb-2.5">
+          <div className="w-10 h-10 rounded-xl bg-primary/25 flex items-center justify-center">
+            <Stethoscope className="h-5 w-5 text-white" />
+          </div>
+          <div>
+            <p className="text-xs font-bold text-white">Dr. Martin</p>
+            <p className="text-xs text-white/60">Médecine générale</p>
+          </div>
         </div>
-        <div>
-          <p className="text-xs font-bold text-white">Dr. Martin</p>
-          <p className="text-xs text-white/60">Médecine générale</p>
+        <div className="flex items-center gap-1.5">
+          {[1,2,3,4,5].map(i => <Star key={i} className="h-3 w-3 fill-amber-400 text-amber-400" />)}
+          <span className="text-xs text-white/80 ml-1">4.9</span>
         </div>
       </div>
-      <div className="flex items-center gap-1.5">
-        {[1,2,3,4,5].map(i => <Star key={i} className="h-3 w-3 fill-amber-400 text-amber-400" />)}
-        <span className="text-xs text-white/80 ml-1">4.9</span>
-      </div>
-    </div>
 
-    <div className="container mx-auto px-4 relative z-10 py-28">
-      <div className="max-w-3xl">
-        {/* Eyebrow */}
-        <div className="inline-flex items-center gap-2 bg-white/12 backdrop-blur-sm border border-white/22 rounded-full px-4 py-2 mb-9 animate-reveal-up" style={{ animationDelay: "0.1s" }}>
-          <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
-          <span className="text-sm font-semibold text-white/90">La plateforme n°1 pour le bien-être animal</span>
+      <div className="container mx-auto px-4 relative z-10 py-28">
+        <div className="max-w-3xl">
+          <div className="inline-flex items-center gap-2 bg-white/12 backdrop-blur-sm border border-white/22 rounded-full px-4 py-2 mb-9 animate-reveal-up" style={{ animationDelay: "0.1s" }}>
+            <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+            <span className="text-sm font-semibold text-white/90">La plateforme n°1 pour le bien-être animal</span>
+          </div>
+
+          <h1 className="text-5xl md:text-6xl lg:text-[4.5rem] font-bold text-white leading-[1.04] mb-7 animate-reveal-up" style={{ animationDelay: "0.2s" }}>
+            Vos compagnons
+            <br />
+            <em className="not-italic text-transparent bg-clip-text" style={{
+              backgroundImage: "linear-gradient(135deg, hsl(158 65% 72%) 0%, hsl(36 90% 70%) 100%)"
+            }}>
+              méritent le meilleur
+            </em>
+          </h1>
+
+          <p className="text-lg md:text-xl text-white/78 mb-11 leading-relaxed max-w-xl font-medium animate-reveal-up" style={{ animationDelay: "0.3s" }}>
+            {user && role === "admin"
+              ? "Bienvenue sur l'espace d'administration. Modérez le contenu, validez les professionnels et assurez la qualité de la plateforme."
+              : user && role === "veterinaire"
+              ? "Gérez votre profil, vos créneaux et vos rendez-vous directement depuis votre espace professionnel."
+              : user && role === "association"
+              ? "Gérez vos animaux, publiez des campagnes et suivez les demandes d'adoption depuis votre espace."
+              : "Trouvez des vétérinaires de confiance, adoptez un animal et rejoignez des associations engagées pour le bien-être animal."}
+          </p>
+
+          {renderCTAs()}
         </div>
-
-        <h1 className="text-5xl md:text-6xl lg:text-[4.5rem] font-bold text-white leading-[1.04] mb-7 animate-reveal-up" style={{ animationDelay: "0.2s" }}>
-          Vos compagnons
-          <br />
-          <em className="not-italic text-transparent bg-clip-text" style={{
-            backgroundImage: "linear-gradient(135deg, hsl(158 65% 72%) 0%, hsl(36 90% 70%) 100%)"
-          }}>
-            méritent le meilleur
-          </em>
-        </h1>
-
-        <p className="text-lg md:text-xl text-white/78 mb-11 leading-relaxed max-w-xl font-medium animate-reveal-up" style={{ animationDelay: "0.3s" }}>
-          {user && role === "admin"
-            ? "Bienvenue sur l'espace d'administration. Modérez le contenu, validez les professionnels et assurez la qualité de la plateforme."
-            : user && role === "veterinaire"
-            ? "Gérez votre profil, vos créneaux et vos rendez-vous directement depuis votre espace professionnel."
-            : user && role === "association"
-            ? "Gérez vos animaux, publiez des campagnes et suivez les demandes d'adoption depuis votre espace."
-            : "Trouvez des vétérinaires de confiance, adoptez un animal et rejoignez des associations engagées pour le bien-être animal."}
-        </p>
-
-        {renderCTAs()}
-
-
       </div>
-    </div>
 
-    {/* Wave bottom */}
-    <div className="absolute bottom-0 left-0 right-0 wave-divider">
-      <svg viewBox="0 0 1440 96" preserveAspectRatio="none" style={{ height: "96px" }}>
-        <path d="M0,48 C180,96 360,0 540,48 C720,96 900,16 1080,52 C1200,76 1320,20 1440,48 L1440,96 L0,96 Z" fill="hsl(42, 55%, 96%)" />
-      </svg>
-    </div>
-  </section>
-);
+      <div className="absolute bottom-0 left-0 right-0 wave-divider">
+        <svg viewBox="0 0 1440 96" preserveAspectRatio="none" style={{ height: "96px" }}>
+          <path d="M0,48 C180,96 360,0 540,48 C720,96 900,16 1080,52 C1200,76 1320,20 1440,48 L1440,96 L0,96 Z" fill="hsl(42, 55%, 96%)" />
+        </svg>
+      </div>
+    </section>
+  );
 };
 
 // ─── FEATURES ─────────────────────────────────────────────────────────────────
@@ -839,46 +961,43 @@ const featureItems = [
 const FeaturesSection = () => {
   const navigate = useNavigate();
   return (
-  <section className="py-32 section-cream">
-    <div className="container mx-auto px-4">
-      <div className="text-center mb-20">
-        <span className="eyebrow block mb-4">Nos services</span>
-        <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-5">
-          Tout pour vos animaux,<br />
-          <span className="text-primary">en un seul endroit</span>
-        </h2>
-        <p className="text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-          Haustier réunit tous les services essentiels pour le bien-être de vos compagnons.
-        </p>
-      </div>
+    <section className="py-32 section-cream">
+      <div className="container mx-auto px-4">
+        <div className="text-center mb-20">
+          <span className="eyebrow block mb-4">Nos services</span>
+          <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-5">
+            Tout pour vos animaux,<br />
+            <span className="text-primary">en un seul endroit</span>
+          </h2>
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+            Haustier réunit tous les services essentiels pour le bien-être de vos compagnons.
+          </p>
+        </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {featureItems.map((f, i) => (
-          <button key={f.title}
-            className="card-hover card-shadow group text-left w-full bg-white rounded-2xl p-7 border border-border/40 cursor-pointer relative overflow-hidden"
-            style={{ animationDelay: `${i * 0.08}s` }}
-            onClick={() => navigate(f.path)}>
-            {/* Warm corner accent */}
-            <div className="absolute -top-10 -right-10 w-36 h-36 rounded-full opacity-40 group-hover:opacity-70 transition-opacity duration-300"
-              style={{ background: f.accent }} />
-
-            <div className="relative z-10">
-              <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300"
-                style={{ background: f.iconBg }}>
-                <f.icon className="h-7 w-7 text-white" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {featureItems.map((f, i) => (
+            <button key={f.title}
+              className="card-hover card-shadow group text-left w-full bg-white rounded-2xl p-7 border border-border/40 cursor-pointer relative overflow-hidden"
+              style={{ animationDelay: `${i * 0.08}s` }}
+              onClick={() => navigate(f.path)}>
+              <div className="absolute -top-10 -right-10 w-36 h-36 rounded-full opacity-40 group-hover:opacity-70 transition-opacity duration-300"
+                style={{ background: f.accent }} />
+              <div className="relative z-10">
+                <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300"
+                  style={{ background: f.iconBg }}>
+                  <f.icon className="h-7 w-7 text-white" />
+                </div>
+                <h3 className="text-lg font-bold text-foreground mb-2.5 group-hover:text-primary transition-colors duration-200">{f.title}</h3>
+                <p className="text-muted-foreground leading-relaxed text-sm">{f.desc}</p>
               </div>
-              <h3 className="text-lg font-bold text-foreground mb-2.5 group-hover:text-primary transition-colors duration-200">{f.title}</h3>
-              <p className="text-muted-foreground leading-relaxed text-sm">{f.desc}</p>
-            </div>
-
-            <div className="mt-5 flex items-center gap-1.5 text-primary text-sm font-semibold opacity-0 group-hover:opacity-100 transition-all duration-200 group-hover:translate-x-1">
-              Découvrir <span>→</span>
-            </div>
-          </button>
-        ))}
+              <div className="mt-5 flex items-center gap-1.5 text-primary text-sm font-semibold opacity-0 group-hover:opacity-100 transition-all duration-200 group-hover:translate-x-1">
+                Découvrir <span>→</span>
+              </div>
+            </button>
+          ))}
+        </div>
       </div>
-    </div>
-  </section>
+    </section>
   );
 };
 

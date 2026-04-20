@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useLayoutEffect } from "react";
 import Background from "@/components/Background";
 import { Navbar, ToastContainer } from "@/components/HeroAndFeatures";
 import { BlogSection } from "@/components/AssociationsAndBlog";
@@ -6,7 +6,13 @@ import Footer from "@/components/Footer";
 import { BookOpen, Clock, Stethoscope, Sparkles } from "lucide-react";
 
 const BlogPage = () => {
-  useEffect(() => { window.scrollTo(0, 0); }, []);
+  useLayoutEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" as ScrollBehavior });
+  }, []);
+  useEffect(() => {
+    const t = setTimeout(() => window.scrollTo({ top: 0, left: 0, behavior: "instant" as ScrollBehavior }), 50);
+    return () => clearTimeout(t);
+  }, []);
 
   return (
     <div className="min-h-screen page-enter">

@@ -17,7 +17,7 @@ import { useDynamicData, type AnimalEntry, type AssocEntry } from "@/hooks/useDy
 const localImages: Record<string, string> = { luna: adoptKitten, max: adoptPuppy, flocon: adoptRabbit };
 const getImage = (animal: AnimalEntry) => localImages[animal.id] || animal.image;
 
-const LoginPrompt = ({ action, onClose }: { action: string; onClose: () => void }) => (
+const LoginPrompt = ({ action, onClose }: { action: string; onClose: () => void }) => createPortal(
   <div className="modal-backdrop" onClick={onClose}>
     <div className="bg-white rounded-2xl shadow-large max-w-sm w-full p-8 text-center" onClick={e => e.stopPropagation()}>
       <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4"><LogIn className="h-8 w-8 text-primary" /></div>
@@ -28,7 +28,8 @@ const LoginPrompt = ({ action, onClose }: { action: string; onClose: () => void 
         <Button variant="outline" onClick={onClose} className="flex-1">Annuler</Button>
       </div>
     </div>
-  </div>
+  </div>,
+  document.body
 );
 
 // ─── ANIMAL MODAL ─────────────────────────────────────────────────────────────
@@ -51,7 +52,7 @@ const AnimalModal = ({ animal, onClose, onViewAssoc }: { animal: AnimalEntry; on
     setAdoptLoading(false);
     setAdoptDone(true);
   };
-  return (
+  return createPortal(
     <>
       <div className="modal-backdrop" onClick={onClose}>
         <div className="bg-white rounded-2xl shadow-large max-w-md w-full overflow-hidden max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
@@ -96,7 +97,8 @@ const AnimalModal = ({ animal, onClose, onViewAssoc }: { animal: AnimalEntry; on
         </div>
       </div>
       {loginPrompt && <LoginPrompt action="faire une demande d'adoption" onClose={() => setLoginPrompt(false)} />}
-    </>
+    </>,
+    document.body
   );
 };
 
@@ -124,7 +126,7 @@ const AssociationProfile = ({ assoc, onBack }: { assoc: AssocEntry; onBack: () =
     toggleAssoc(assoc.id, assoc.name);
   };
 
-  return (
+  const content = (
     <>
       <div ref={profileRef} className="fixed inset-0 z-50 bg-background overflow-y-auto">
         {/* Cover */}
@@ -254,6 +256,8 @@ const AssociationProfile = ({ assoc, onBack }: { assoc: AssocEntry; onBack: () =
       {loginPrompt && <LoginPrompt action="ajouter un favori" onClose={() => setLoginPrompt(false)} />}
     </>
   );
+
+  return createPortal(content, document.body);
 };
 
 // ─── ASSOCIATIONS SECTION ─────────────────────────────────────────────────────

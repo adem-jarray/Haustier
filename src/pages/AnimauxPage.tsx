@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useLayoutEffect } from "react";
 import Background from "@/components/Background";
 import { Navbar, ToastContainer } from "@/components/HeroAndFeatures";
 import AdoptionSection from "@/components/AdoptionSection";
@@ -9,7 +9,13 @@ import { Heart, Users, Shield, Sparkles } from "lucide-react";
 const AnimauxPage = () => {
   const [openAssocId, setOpenAssocId] = useState<string | null>(null);
 
-  useEffect(() => { window.scrollTo(0, 0); }, []);
+  useLayoutEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" as ScrollBehavior });
+  }, []);
+  useEffect(() => {
+    const t = setTimeout(() => window.scrollTo({ top: 0, left: 0, behavior: "instant" as ScrollBehavior }), 50);
+    return () => clearTimeout(t);
+  }, []);
 
   const handleViewAssoc = (id: string) => {
     setOpenAssocId(id);
