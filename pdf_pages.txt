@@ -1,0 +1,645 @@
+=== PAGE 65 ===
+Ministère de l'Enseignement Supérieur et de la Recherche Scientifique    •    Institut Supérieur d'Informatique et des Technologies de 
+Communication 
+ 
+Année universitaire : 2026/2027  Projet de fin d'année — Haustier                                         64 
+ 
+grille responsive de cards professionnelles intégrant les badges « Disponible » et « Top noté 
+», ainsi que les boutons de prise de rendez-vous et de localisation. Le composant VetProfile 
+expose le profil complet du vétérinaire avec ses publications, ses horaires et ses coordonnées. 
+Le système de publications a été implémenté via le composant PostsSection, permettant aux 
+vétérinaires authentifiés de rédiger et publier du contenu directement depuis leur profil. Les 
+données de rendez-vous et de profil sont persistées dans Supabase, garantissant leur 
+disponibilité en temps réel. La localisation des vétérinaires est assurée par intégration avec 
+Google Maps via des liens dynamiques générés à partir des adresses saisies dans les profils. 
+L'ensemble du développement front-end a suivi les principes de React Context pour la 
+gestion des états d'authentification et de favoris. 
+ 
+ 
+4.5 Conclusion 
+Le quatrième sprint a permis de structurer de manière complète l'espace professionnel des 
+vétérinaires au sein de la plateforme Haustier. Les fonctionnalités développées offrent aux 
+professionnels de la santé animale des outils efficaces pour gérer leur visibilité, leurs 
+consultations et leur communication avec les utilisateurs. L'intégration de la localisation 
+cartographique et du système de publications renforce la dimension servicielle et 
+communautaire de la plateforme. Le prochain chapitre sera consacré aux fonctionnalités 
+développées lors du cinquième sprint, dédié à l'espace des associations de protection animale. 
+ 
+ 
+ 
+ 
+
+=== PAGE 66 ===
+Ministère de l'Enseignement Supérieur et de la Recherche Scientifique    •    Institut Supérieur d'Informatique et des Technologies de 
+Communication 
+ 
+Année universitaire : 2026/2027  Projet de fin d'année — Haustier                                         65 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+Chapitre 7 
+Étude et réalisation du sprint 5 : Espace vétérinaire 
+ 
+Sommaire du chapitre : 
+1. Introduction  
+2. Backlog du sprint 5  
+3. Spécification fonctionnelle et conception  
+4. Réalisation technique  
+5. Conclusion  
+
+=== PAGE 67 ===
+Ministère de l'Enseignement Supérieur et de la Recherche Scientifique    •    Institut Supérieur d'Informatique et des Technologies de 
+Communication 
+ 
+Année universitaire : 2026/2027  Projet de fin d'année — Haustier                                         66 
+ 
+ 
+5.1 Introduction 
+Ce cinquième chapitre est consacré à la présentation des travaux effectués lors du cinquième 
+sprint du projet Haustier, entièrement dédié à la mise en place de l'espace professionnel des 
+associations de protection animale. Cette itération constitue un maillon essentiel de la chaîne 
+de valeur de la plateforme, puisqu'elle permet aux associations de s'inscrire, de gérer leur 
+profil, de publier leurs animaux disponibles à l'adoption et de traiter les demandes qui leur 
+sont soumises. Nous présenterons dans ce chapitre le backlog retenu, les spécifications 
+fonctionnelles détaillées et les choix d'implémentation adoptés pour répondre aux besoins 
+spécifiques de ces acteurs associatifs. 
+ 
+5.2 Backlog du sprint 5 
+Les user stories de ce sprint ont été définies pour couvrir l'ensemble du cycle de vie d'une 
+association sur la plateforme : de sa visibilité publique à la gestion opérationnelle de ses 
+animaux et de ses campagnes. La priorité a été accordée aux fonctionnalités les plus 
+directement liées à la mission principale des associations, à savoir la promotion de l'adoption 
+animale et la sensibilisation du public. 
+ID 
+En tant 
+que 
+Je veux 
+Pour que 
+Priorité 
+03 Association Gérer un animal d'adoption 
+Le proposer à l'adoption sur la 
+plateforme 
+Élevée 
+
+=== PAGE 68 ===
+Ministère de l'Enseignement Supérieur et de la Recherche Scientifique    •    Institut Supérieur d'Informatique et des Technologies de 
+Communication 
+ 
+Année universitaire : 2026/2027  Projet de fin d'année — Haustier                                         67 
+ 
+ID 
+En tant 
+que 
+Je veux 
+Pour que 
+Priorité 
+03 Association Être visible sur la plateforme Faire connaître mes actions 
+Élevée 
+03 Association Gérer mon profil 
+D'être visible et crédible 
+Moyenne 
+03 Association Traiter les demandes 
+d'adoption 
+Sélectionner les adoptants 
+Élevée 
+03 Association 
+Gérer les campagnes de 
+vaccination 
+Informer les utilisateurs 
+Faible 
+Tableau 5.1: Backlog du sprint 5 
+ 
+5.3 Spécification fonctionnelle et conception 
+La modélisation des interactions propres à l'espace association a nécessité une attention 
+particulière aux droits d'accès et aux flux de données entre les associations, les animaux 
+référencés et les utilisateurs souhaitant adopter. Les diagrammes de cas d'utilisation élaborés 
+pour ce sprint mettent en évidence la richesse fonctionnelle de cet espace et les dépendances 
+entre les différentes actions disponibles. 
+
+=== PAGE 69 ===
+Ministère de l'Enseignement Supérieur et de la Recherche Scientifique    •    Institut Supérieur d'Informatique et des Technologies de 
+Communication 
+ 
+Année universitaire : 2026/2027  Projet de fin d'année — Haustier                                         68 
+ 
+ 
+Figure 5.3 : Diagramme de cas d'utilisation pour le sprint 5 
+• Description textuelle du cas d'utilisation « Gérer un animal d'adoption » : 
+Cas d'utilisation Gérer un animal d'adoption 
+Acteurs 
+Association connectée 
+Préconditions 
+– L'association est authentifiée avec un compte de rôle « association » 
+– Son compte a été validé par l'administrateur 
+
+=== PAGE 70 ===
+Ministère de l'Enseignement Supérieur et de la Recherche Scientifique    •    Institut Supérieur d'Informatique et des Technologies de 
+Communication 
+ 
+Année universitaire : 2026/2027  Projet de fin d'année — Haustier                                         69 
+ 
+Postconditions – L'animal est référencé dans la base de données et visible dans la section 
+Adoption 
+Scénario 
+principal 
+1. L'association accède à son espace de gestion 
+2. Elle clique sur « Ajouter un animal » 
+3. Un formulaire s'affiche avec les champs : nom, espèce, race, âge, sexe, 
+statut vaccinal, stérilisation, puce, description, photo 
+4. L'association remplit le formulaire et valide 
+5. Le système enregistre l'animal dans Supabase 
+6. L'animal apparaît dans la section « Adoption » de la plateforme 
+7. L'association peut modifier ou supprimer un animal existant 
+ 
+• Description textuelle du cas d'utilisation « Être visible sur la plateforme » : 
+Cas d'utilisation Être visible sur la plateforme 
+Acteurs 
+Association connectée 
+
+=== PAGE 71 ===
+Ministère de l'Enseignement Supérieur et de la Recherche Scientifique    •    Institut Supérieur d'Informatique et des Technologies de 
+Communication 
+ 
+Année universitaire : 2026/2027  Projet de fin d'année — Haustier                                         70 
+ 
+Préconditions 
+– L'association est authentifiée et son compte est validé 
+– Le profil de l'association est complété 
+Postconditions 
+– L'association apparaît dans la section « Associations » et est accessible 
+aux visiteurs 
+Scénario 
+principal 
+1. L'association complète son profil avec : nom, description, ville, photo 
+de couverture, coordonnées 
+2. Le système publie automatiquement le profil sur la plateforme 
+3. Les visiteurs peuvent retrouver l'association via la barre de recherche 
+ou les filtres 
+4. La card de l'association affiche : photo, nom, ville, nombre d'animaux, 
+nombre de campagnes 
+5. Un clic sur la card ouvre le profil complet de l'association 
+ 
+
+=== PAGE 72 ===
+Ministère de l'Enseignement Supérieur et de la Recherche Scientifique    •    Institut Supérieur d'Informatique et des Technologies de 
+Communication 
+ 
+Année universitaire : 2026/2027  Projet de fin d'année — Haustier                                         71 
+ 
+• Description textuelle du cas d'utilisation « Gérer mon profil (association) » : 
+Cas d'utilisation Gérer mon profil 
+Acteurs 
+Association connectée 
+Préconditions 
+– L'association est authentifiée 
+– Son compte est actif et validé par l'administrateur 
+Postconditions 
+– Les informations du profil sont mises à jour et immédiatement visibles 
+publiquement 
+
+=== PAGE 73 ===
+Ministère de l'Enseignement Supérieur et de la Recherche Scientifique    •    Institut Supérieur d'Informatique et des Technologies de 
+Communication 
+ 
+Année universitaire : 2026/2027  Projet de fin d'année — Haustier                                         72 
+ 
+Scénario 
+principal 
+1. L'association accède à son espace de gestion 
+2. Elle clique sur « Modifier mon profil » 
+3. Un formulaire s'affiche avec les champs modifiables : nom, description, 
+ville, téléphone, email, site web, photo de couverture 
+4. L'association effectue les modifications souhaitées 
+5. Elle valide en cliquant sur « Enregistrer » 
+6. Le système met à jour les données dans Supabase 
+7. Le profil public reflète immédiatement les changements 
+• Description textuelle du cas d'utilisation « Traiter les demandes d'adoption » : 
+Cas d'utilisation Traiter les demandes d'adoption 
+Acteurs 
+Association connectée 
+
+=== PAGE 74 ===
+Ministère de l'Enseignement Supérieur et de la Recherche Scientifique    •    Institut Supérieur d'Informatique et des Technologies de 
+Communication 
+ 
+Année universitaire : 2026/2027  Projet de fin d'année — Haustier                                         73 
+ 
+Préconditions 
+– L'association est authentifiée 
+– Au moins un utilisateur a soumis une demande d'adoption pour un 
+animal géré par cette association 
+Postconditions 
+– La demande d'adoption est traitée (acceptée ou refusée) 
+– L'utilisateur est informé de la décision de l'association 
+Scénario 
+principal 
+1. L'association accède à la section « Demandes d'adoption » de son 
+espace 
+2. La liste des demandes reçues s'affiche avec : nom de l'utilisateur, 
+animal concerné, date de la demande 
+3. L'association clique sur une demande pour consulter le profil de 
+l'adoptant potentiel 
+4. Elle décide d'accepter ou de refuser la demande 
+5. Le système met à jour le statut de la demande dans la base de données 
+6. L'utilisateur peut consulter la réponse depuis son espace personnel 
+ 
+
+=== PAGE 75 ===
+Ministère de l'Enseignement Supérieur et de la Recherche Scientifique    •    Institut Supérieur d'Informatique et des Technologies de 
+Communication 
+ 
+Année universitaire : 2026/2027  Projet de fin d'année — Haustier                                         74 
+ 
+• Description textuelle du cas d'utilisation « Gérer les campagnes de vaccination » : 
+Cas d'utilisation Gérer les campagnes de vaccination 
+Acteurs 
+Association connectée 
+Préconditions 
+– L'association est authentifiée et son compte est validé 
+Postconditions 
+– La campagne de vaccination est publiée et visible sur le profil de 
+l'association 
+Scénario 
+principal 
+1. L'association accède à son espace de gestion 
+2. Elle navigue vers la section « Campagnes de vaccination » 
+3. Elle clique sur « Ajouter une campagne » 
+4. Elle renseigne les informations : titre, date, lieu, description 
+5. Elle valide la publication 
+6. La campagne apparaît sur le profil public de l'association 
+7. Les visiteurs peuvent consulter les campagnes depuis le profil de 
+l'association 
+
+=== PAGE 76 ===
+Ministère de l'Enseignement Supérieur et de la Recherche Scientifique    •    Institut Supérieur d'Informatique et des Technologies de 
+Communication 
+ 
+Année universitaire : 2026/2027  Projet de fin d'année — Haustier                                         75 
+ 
+ 
+ 
+ 
+5.4 Réalisation technique 
+La réalisation de ce sprint a mobilisé les mêmes technologies centrales que les itérations 
+précédentes, avec une attention particulière portée sur la gestion des données associatives et 
+leur exposition publique. Le composant AssociationsAndBlog.tsx a été enrichi pour intégrer 
+l'affichage des profils complets d'associations, avec leur couverture photo, leurs animaux 
+disponibles et leurs campagnes en cours. 
+Le composant AssociationProfile permet aux associations authentifiées d'accéder à leur 
+espace de gestion depuis leur profil public. Les animaux ajoutés par une association via 
+l'authentification sont automatiquement référencés dans le système grâce au hook 
+useDynamicData, qui fusionne les données dynamiques issues de Supabase et du 
+localStorage avec les données statiques préchargées. Le système de publications partagé avec 
+l'espace vétérinaire a également été activé pour les associations, leur permettant de 
+communiquer directement avec leur communauté d'utilisateurs via des posts texte et image. 
+ 
+5.5 Conclusion 
+Le cinquième sprint a permis de construire un espace associatif complet et fonctionnel au sein 
+de la plateforme Haustier. Les associations disposent désormais de tous les outils nécessaires 
+pour gérer leur présence en ligne, leurs animaux à l'adoption, les demandes qui leur sont 
+soumises et leurs campagnes de sensibilisation. Ces fonctionnalités renforcent 
+considérablement la mission sociale de la plateforme et créent un lien direct entre les 
+associations et les utilisateurs souhaitant s'engager pour le bien-être animal. Le prochain 
+
+=== PAGE 77 ===
+Ministère de l'Enseignement Supérieur et de la Recherche Scientifique    •    Institut Supérieur d'Informatique et des Technologies de 
+Communication 
+ 
+Année universitaire : 2026/2027  Projet de fin d'année — Haustier                                         76 
+ 
+chapitre présentera les fonctionnalités développées lors du sixième et dernier sprint, consacré 
+à l'administration et à la modération de la plateforme. 
+ 
+ 
+Chapitre 8 
+Étude et réalisation du sprint 6 : Administration et modération 
+ 
+Sommaire du chapitre: 
+1. Introduction  
+2. Backlog du sprint 6  
+3. Spécification fonctionnelle et conception  
+4. Réalisation technique  
+5. Conclusion  
+ 
+6.1 Introduction 
+Ce sixième et dernier chapitre présente les travaux réalisés lors du sprint final du projet 
+Haustier, consacré à la mise en place de l'espace d'administration de la plateforme. Cette 
+itération clôture le cycle de développement en dotant la plateforme d'un système de 
+gouvernance interne permettant de garantir la fiabilité et la qualité du contenu proposé aux 
+
+=== PAGE 78 ===
+Ministère de l'Enseignement Supérieur et de la Recherche Scientifique    •    Institut Supérieur d'Informatique et des Technologies de 
+Communication 
+ 
+Année universitaire : 2026/2027  Projet de fin d'année — Haustier                                         77 
+ 
+utilisateurs. L'administrateur dispose ainsi des outils nécessaires pour valider les comptes 
+professionnels, modérer les publications et maintenir le blog de conseils vétérinaires. Nous 
+présenterons dans ce chapitre le backlog retenu, les spécifications fonctionnelles de chaque 
+cas d'utilisation et les choix techniques adoptés pour sécuriser cet espace sensible. 
+ 
+6.2 Backlog du sprint 6 
+Les user stories de ce sprint ont été définies pour couvrir les responsabilités essentielles de 
+l'administrateur de la plateforme. Chaque fonctionnalité contribue directement à la confiance 
+que les utilisateurs peuvent accorder à Haustier, en garantissant l'authenticité des 
+professionnels référencés et la pertinence du contenu publié. 
+ 
+ID En tant que 
+Je veux 
+Pour que 
+Priorité 
+99 
+Administrateu
+r 
+Valider les comptes 
+vétérinaires 
+Garantir l'authenticité des 
+vétérinaires 
+Élevée 
+99 
+Administrateu
+r 
+Valider les comptes 
+associations 
+Garantir la fiabilité des associations Moyenne 
+99 
+Administrateu
+r 
+Modérer les publications 
+Assurer le respect des règles de la 
+plateforme 
+Élevée 
+
+=== PAGE 79 ===
+Ministère de l'Enseignement Supérieur et de la Recherche Scientifique    •    Institut Supérieur d'Informatique et des Technologies de 
+Communication 
+ 
+Année universitaire : 2026/2027  Projet de fin d'année — Haustier                                         78 
+ 
+ 
+Tableau 6.1 : Backlog du sprint 6 
+ 
+6.3 Spécification fonctionnelle et conception 
+L'espace administrateur représente la couche de gouvernance de la plateforme Haustier. Les 
+fonctionnalités développées dans ce sprint s'inscrivent dans une logique de contrôle qualité et 
+de modération, assurant que seuls des professionnels vérifiés et des contenus conformes sont 
+présentés aux utilisateurs. La sécurité de cet espace repose sur le système d'authentification de 
+Supabase avec gestion des rôles, permettant de restreindre l'accès aux seuls comptes 
+disposant du rôle « administrateur ». 
+99 Administrateu
+r 
+Gérer les articles du blog 
+Maintenir le contenu du site à jour 
+Faible 
+
+=== PAGE 80 ===
+Ministère de l'Enseignement Supérieur et de la Recherche Scientifique    •    Institut Supérieur d'Informatique et des Technologies de 
+Communication 
+ 
+Année universitaire : 2026/2027  Projet de fin d'année — Haustier                                         79 
+ 
+ 
+Figure 6.1 : Diagramme de cas d'utilisation pour le sprint 6 
+ 
+• Description textuelle du cas d'utilisation « Valider les comptes vétérinaires » : 
+Cas d'utilisation Valider les comptes vétérinaires 
+Acteurs 
+Administrateur 
+
+=== PAGE 81 ===
+Ministère de l'Enseignement Supérieur et de la Recherche Scientifique    •    Institut Supérieur d'Informatique et des Technologies de 
+Communication 
+ 
+Année universitaire : 2026/2027  Projet de fin d'année — Haustier                                         80 
+ 
+Préconditions 
+– L'administrateur est authentifié avec un compte de rôle « 
+administrateur » 
+– Au moins un vétérinaire a soumis une demande d'inscription sur la 
+plateforme 
+Postconditions 
+– Le compte vétérinaire est activé ou rejeté 
+– Le vétérinaire est notifié de la décision 
+Scénario 
+principal 
+1. L'administrateur accède à son tableau de bord d'administration 
+2. Il navigue vers la section « Demandes de compte vétérinaire » 
+3. La liste des demandes en attente s'affiche avec : nom, spécialité, 
+numéro d'ordre vétérinaire, ville 
+4. L'administrateur consulte les informations soumises par le vétérinaire 
+5. Il clique sur « Valider » ou « Rejeter » 
+6. Le système met à jour le statut du compte dans Supabase 
+7. Le vétérinaire validé apparaît automatiquement dans les résultats de 
+recherche de la plateforme 
+
+=== PAGE 82 ===
+Ministère de l'Enseignement Supérieur et de la Recherche Scientifique    •    Institut Supérieur d'Informatique et des Technologies de 
+Communication 
+ 
+Année universitaire : 2026/2027  Projet de fin d'année — Haustier                                         81 
+ 
+ 
+• Description textuelle du cas d'utilisation « Valider les comptes associations » : 
+Cas d'utilisation Valider les comptes associations 
+Acteurs 
+Administrateur 
+Préconditions 
+– L'administrateur est authentifié 
+– Au moins une association a soumis une demande d'inscription 
+Postconditions 
+– Le compte de l'association est activé ou rejeté 
+– L'association est notifiée de la décision 
+
+=== PAGE 83 ===
+Ministère de l'Enseignement Supérieur et de la Recherche Scientifique    •    Institut Supérieur d'Informatique et des Technologies de 
+Communication 
+ 
+Année universitaire : 2026/2027  Projet de fin d'année — Haustier                                         82 
+ 
+Scénario 
+principal 
+1. L'administrateur accède à la section « Demandes de compte 
+association » 
+2. La liste des demandes en attente s'affiche avec : nom, ville, numéro 
+SIRET ou équivalent, description 
+3. L'administrateur vérifie les informations fournies 
+4. Il clique sur « Valider » ou « Rejeter » la demande 
+5. Le système met à jour le statut dans la base de données 
+6. L'association validée est rendue visible sur la plateforme et peut 
+commencer à publier ses animaux 
+ 
+• Description textuelle du cas d'utilisation « Modérer les publications » : 
+Cas d'utilisation Modérer les publications 
+Acteurs 
+Administrateur 
+Préconditions 
+– L'administrateur est authentifié 
+
+=== PAGE 84 ===
+Ministère de l'Enseignement Supérieur et de la Recherche Scientifique    •    Institut Supérieur d'Informatique et des Technologies de 
+Communication 
+ 
+Année universitaire : 2026/2027  Projet de fin d'année — Haustier                                         83 
+ 
+– Des publications ont été créées par des vétérinaires ou des associations 
+Postconditions 
+– La publication non conforme est supprimée ou signalée 
+– La plateforme maintient un contenu de qualité et respectueux des 
+règles 
+Scénario 
+principal 
+1. L'administrateur accède à la section « Modération des publications » 
+2. La liste des publications récentes s'affiche avec : auteur, date, contenu, 
+nombre de likes 
+3. L'administrateur consulte le contenu de chaque publication 
+4. Il identifie les publications non conformes (contenu inapproprié, 
+publicité abusive, informations erronées) 
+5. Il clique sur « Supprimer » pour retirer la publication 
+6. Le système supprime la publication de la base de données et l'retire de 
+l'affichage public 
+7. L'auteur peut être notifié de la suppression 
+ 
+• Description textuelle du cas d'utilisation « Gérer les articles du blog » : 
+
+=== PAGE 85 ===
+Ministère de l'Enseignement Supérieur et de la Recherche Scientifique    •    Institut Supérieur d'Informatique et des Technologies de 
+Communication 
+ 
+Année universitaire : 2026/2027  Projet de fin d'année — Haustier                                         84 
+ 
+Cas 
+d'utilisation 
+Gérer les articles du blog 
+Acteurs 
+Administrateur 
+Préconditions – L'administrateur est authentifié 
+Postconditions – Les articles du blog sont à jour, pertinents et correctement catégorisés 
+Scénario 
+principal 
+1. L'administrateur accède à la section « Gestion du blog » 
+2. La liste des articles existants s'affiche avec : titre, catégorie, date, statut 
+3. L'administrateur peut ajouter un nouvel article en remplissant le 
+formulaire : titre, contenu, catégorie (Urgence, Santé, Conseils, Nutrition, 
+Comportement) 
+4. Il peut modifier un article existant 
+5. Il peut supprimer un article obsolète ou incorrect 
+6. Les modifications sont immédiatement répercutées sur la section Blog 
+de la plateforme 
+ 
+
+=== PAGE 86 ===
+Ministère de l'Enseignement Supérieur et de la Recherche Scientifique    •    Institut Supérieur d'Informatique et des Technologies de 
+Communication 
+ 
+Année universitaire : 2026/2027  Projet de fin d'année — Haustier                                         85 
+ 
+6.4 Réalisation technique 
+La mise en œuvre de l'espace d'administration a reposé sur les mécanismes de gestion des 
+rôles offerts par Supabase Auth, permettant de distinguer les comptes administrateurs des 
+autres types d'utilisateurs et de restreindre l'accès aux routes et composants sensibles. Le 
+système de validation des comptes professionnels s'appuie sur le champ verified stocké dans 
+les métadonnées utilisateur de Supabase, dont la valeur passe de pending à approved ou 
+rejected selon la décision de l'administrateur. 
+La modération des publications s'intègre au composant PostsSection existant, enrichi d'actions 
+supplémentaires visibles uniquement pour les comptes disposant du rôle administrateur. La 
+gestion des articles du blog, initialement assurée par le fichier statique siteData.ts, a été 
+partiellement migrée vers une gestion dynamique via Supabase, permettant à l'administrateur 
+d'ajouter, modifier ou supprimer des articles sans intervention sur le code source. L'ensemble 
+de cet espace a été développé en veillant à la sécurité des données, en appliquant les principes 
+de Row Level Security (RLS) de PostgreSQL via Supabase pour garantir que seul 
+l'administrateur peut accéder aux fonctionnalités de gouvernance. 
+ 
+6.5 Conclusion 
+Le sixième sprint a permis de finaliser la plateforme Haustier en lui dotant d'un espace 
+d'administration complet et sécurisé. Grâce aux fonctionnalités de validation des comptes 
+professionnels, de modération des publications et de gestion du contenu éditorial, la 
+plateforme dispose désormais des outils nécessaires pour maintenir un niveau de qualité et de 
+fiabilité élevé au bénéfice de l'ensemble de ses utilisateurs. Ce dernier sprint marque 
+l'aboutissement d'un cycle de développement agile conduit sur six sprints, ayant 
+progressivement construit une plateforme web tunisienne de services animaliers complète et 
+fonctionnelle. La conclusion générale du rapport présentera un bilan de l'ensemble du travail 
+accompli ainsi que les perspectives d'évolution envisagées pour Haustier. 
+ 
+
+=== PAGE 87 ===
+Ministère de l'Enseignement Supérieur et de la Recherche Scientifique    •    Institut Supérieur d'Informatique et des Technologies de 
+Communication 
+ 
+Année universitaire : 2026/2027  Projet de fin d'année — Haustier                                         86 
+ 
+ 
+ 
+ 
+ 
+Conclusion générale et perspectives 
+À la conclusion de ce rapport, nous synthétisons les activités réalisées dans le cadre de notre 
+projet de fin d'années pour l'obtention du diplôme de Licence en Science de l'Informatique. 
+Tout au long de ce rapport, nous avons documenté les différentes phases de réalisation de 
+notre solution, Haustier, une plateforme web tunisienne de services pour animaux de 
+compagnie. 
+L'objectif de ce projet était de concevoir et de développer une application web complète 
+permettant de centraliser l'ensemble des services liés aux animaux de compagnie en Tunisie. 
+En mettant l'accent sur la mise en relation entre les propriétaires d'animaux, les vétérinaires et 
+les associations de protection animale, notre plateforme vise à faciliter l'accès aux soins 
+vétérinaires, à promouvoir l'adoption responsable et à renforcer l'engagement des citoyens 
+tunisiens pour le bien-être animal. 
+Dans un premier temps, nous avons analysé la situation globale du projet et identifié les 
+différentes exigences fonctionnelles et non fonctionnelles du système. Nous avons ensuite 
+élaboré un plan de travail structuré en six sprints, conformément aux principes de la méthode 
+Scrum, afin de livrer de manière itérative et progressive l'ensemble des fonctionnalités de la 
+plateforme, depuis la navigation publique jusqu'à l'administration et la modération du 
+contenu. 
+Comme perspectives, notre application peut être enrichie par plusieurs fonctionnalités 
+supplémentaires, notamment l'intégration d'un système de messagerie instantanée permettant 
+aux utilisateurs de communiquer directement avec les vétérinaires et les associations depuis la 
+
+=== PAGE 88 ===
+Ministère de l'Enseignement Supérieur et de la Recherche Scientifique    •    Institut Supérieur d'Informatique et des Technologies de 
+Communication 
+ 
+Année universitaire : 2026/2027  Projet de fin d'année — Haustier                                         87 
+ 
+plateforme, le développement d'une application mobile dédiée sous React Native pour élargir 
+l'accessibilité de Haustier, ainsi que l'intégration d'un module de paiement en ligne pour 
+finaliser la fonctionnalité de don aux associations. Il serait également envisageable 
+d'incorporer un assistant intelligent capable de recommander des vétérinaires ou des animaux 
+à adopter en fonction du profil et des préférences de l'utilisateur. 
+En conclusion, ce projet nous a permis de développer une solution innovante et socialement 
+engagée, en tenant compte des besoins réels des propriétaires d'animaux en Tunisie et des 
+acteurs du monde associatif et vétérinaire. Cette expérience nous a offert l'opportunité de 
+mettre en pratique l'ensemble des compétences acquises au cours de notre formation, tant sur 
+le plan technique que méthodologique. 
+Webogrsaphie 
+[1] React : https://fr.react.dev/ consulté le 10/01/2025 
+[2] TypeScript : https://www.typescriptlang.org/docs/ consulté le 10/01/2025 
+[3] Vite : https://vitejs.dev/ consulté le 12/01/2025 
+[4] Tailwind CSS : https://tailwindcss.com/docs consulté le 15/01/2025 
+[5] shadcn/ui : https://ui.shadcn.com/ consulté le 15/01/2025 
+[6] Supabase : https://supabase.com/docs consulté le 20/01/2025 
+[7] PostgreSQL : https://www.postgresql.org/docs/ consulté le 20/01/2025 
+[8] React Router DOM : https://reactrouter.com/en/main consulté le 22/01/2025 
+[9] Lucide React : https://lucide.dev/ consulté le 25/01/2025 
+[10] VS Code : https://code.visualstudio.com/ consulté le 05/01/2025 
+
+=== PAGE 89 ===
+Ministère de l'Enseignement Supérieur et de la Recherche Scientifique    •    Institut Supérieur d'Informatique et des Technologies de 
+Communication 
+ 
+Année universitaire : 2026/2027  Projet de fin d'année — Haustier                                         88 
+ 
+[11] GitHub : https://docs.github.com/ consulté le 05/01/2025 
+[12] npm : https://docs.npmjs.com/ consulté le 08/01/2025 
+[13] Draw.io : https://www.drawio.com/ consulté le 28/01/2025 
+[14] Google Fonts — Plus Jakarta Sans : 
+https://fonts.google.com/specimen/Plus+Jakarta+Sans consulté le 01/02/2025 
+[15] Google Fonts — Fraunces : https://fonts.google.com/specimen/Fraunces consulté le 
+01/02/2025 
+ 
+ 
+

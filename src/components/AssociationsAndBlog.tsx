@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useLayoutEffect } from "react";
+import React, { useState, useEffect, useLayoutEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 import adoptKitten from "@/assets/adopt-kitten.png";
 import adoptPuppy from "@/assets/adopt-puppy.png";
@@ -7,12 +7,13 @@ import { Syringe, Users, Shield, ArrowRight, BookOpen, Calendar, X, Search, Phon
 import { StarRating } from "@/components/HeroAndFeatures";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { animals as allAnimals, blogPosts } from "@/data/siteData";
+import { blogPosts } from "@/data/siteData";
 import { useAuth } from "@/hooks/useAuth";
 import FavHeart from "@/components/FavHeart";
 import PostsSection from "@/components/PostsSection";
 import { useFavorites } from "@/context/FavoritesContext";
 import { useDynamicData, type AnimalEntry, type AssocEntry } from "@/hooks/useDynamicData";
+import { supabase } from "@/integrations/supabase/client";
 
 const localImages: Record<string, string> = { luna: adoptKitten, max: adoptPuppy, flocon: adoptRabbit };
 const getImage = (animal: AnimalEntry) => localImages[animal.id] || animal.image;
@@ -33,8 +34,8 @@ const LoginPrompt = ({ action, onClose }: { action: string; onClose: () => void 
 );
 
 // ─── ANIMAL MODAL ─────────────────────────────────────────────────────────────
-const AnimalModal = ({ animal, onClose, onViewAssoc }: { animal: AnimalEntry; onClose: () => void; onViewAssoc?: (id: string) => void }) => {
-  const assoc = associations.find(a => a.id === animal.associationId);
+const AnimalModal = ({ animal, onClose, onViewAssoc, allAssocs }: { animal: AnimalEntry; onClose: () => void; onViewAssoc?: (id: string) => void; allAssocs?: AssocEntry[] }) => {
+  const assoc = (allAssocs ?? []).find(a => a.id === animal.associationId);
   const { user } = useAuth();
   const [loginPrompt, setLoginPrompt] = useState(false);
   const [adoptLoading, setAdoptLoading] = useState(false);
@@ -114,11 +115,24 @@ const AssociationProfile = ({ assoc, onBack }: { assoc: AssocEntry; onBack: () =
   }, []); // run once on mount before paint
   const { user } = useAuth();
   const { favAssocs, toggleAssoc } = useFavorites();
+  const { allAnimals: dynAnimals } = useDynamicData();
   const [loginPrompt, setLoginPrompt] = useState(false);
   const [donateModal, setDonateModal] = useState(false);
   const [volunteerModal, setVolunteerModal] = useState(false);
   const [selectedAnimal, setSelectedAnimal] = useState<AnimalEntry | null>(null);
-  const assocAnimals = allAnimals.filter(a => assoc.animalIds.includes(a.id));
+  const [dbCampaigns, setDbCampaigns] = useState<any[]>([]);
+
+  // Fetch real campaigns from DB for this association
+  useEffect(() => {
+    if (!assoc.dbId) return;
+    supabase.from("campaigns").select("*").eq("association_id", assoc.dbId ?? assoc.id).order("created_at", { ascending: false })
+      .then(({ data }) => setDbCampaigns(data ?? []));
+  }, [assoc.dbId, assoc.id]);
+
+  // Merge static animalIds-based animals + dynamic DB animals for this association
+  const assocAnimals = dynAnimals.filter(a =>
+    assoc.animalIds?.includes(a.id) || a.associationId === assoc.id || a.associationId === assoc.dbId
+  );
   const isFav = favAssocs.includes(assoc.id);
 
   const handleFav = () => {
@@ -173,12 +187,13 @@ const AssociationProfile = ({ assoc, onBack }: { assoc: AssocEntry; onBack: () =
               <div className="bg-white rounded-2xl p-6 border border-border/50 card-shadow">
                 <h2 className="text-xl font-bold text-foreground mb-4">Campagnes en cours</h2>
                 <ul className="space-y-3">
-                  {assoc.campaigns_list.map((c, i) => (
+                  {/* Show DB campaigns if available, otherwise fall back to static campaigns_list */}
+                  {(dbCampaigns.length > 0 ? dbCampaigns.map(c => c.title) : assoc.campaigns_list).map((c, i) => (
                     <li key={i} className="flex items-start gap-3">
                       <div className="w-7 h-7 rounded-full bg-secondary/10 flex items-center justify-center shrink-0 mt-0.5">
                         <Syringe className="h-4 w-4 text-secondary" />
                       </div>
-                      <span className="text-muted-foreground">{c}</span>
+                      <span className="text-muted-foreground">{typeof c === 'string' ? c : (c as any).title}</span>
                     </li>
                   ))}
                 </ul>
@@ -210,10 +225,10 @@ const AssociationProfile = ({ assoc, onBack }: { assoc: AssocEntry; onBack: () =
 
               {/* Posts */}
               <PostsSection
-                authorId={(assoc as any).userId || assoc.id}
+                authorId={assoc.userId || assoc.id}
                 authorType="assoc"
                 authorName={assoc.name}
-                canPost={true}
+                canPost={!!user && (user.id === assoc.userId)}
               />
             </div>
 

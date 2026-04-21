@@ -692,3 +692,112 @@ SELECT table_name
 FROM information_schema.tables
 WHERE table_schema = 'public'
 ORDER BY table_name;
+
+-- =====================
+-- PATCHES: Missing policies & columns
+-- Run these if the tables already exist
+-- =====================
+
+-- Add location column to campaigns if not exists
+ALTER TABLE public.campaigns ADD COLUMN IF NOT EXISTS location TEXT;
+
+-- Volunteer requests: allow associations to update status (accept/reject)
+DROP POLICY IF EXISTS "Assocs can update volunteer requests" ON public.volunteer_requests;
+CREATE POLICY "Assocs can update volunteer requests" ON public.volunteer_requests FOR UPDATE USING (
+  EXISTS (SELECT 1 FROM public.associations WHERE id = association_id AND user_id = auth.uid())
+);
+
+-- Campaigns: allow associations to update their campaigns
+DROP POLICY IF EXISTS "Assocs can update own campaigns" ON public.campaigns;
+CREATE POLICY "Assocs can update own campaigns" ON public.campaigns FOR UPDATE USING (
+  EXISTS (SELECT 1 FROM public.associations WHERE id = association_id AND user_id = auth.uid())
+);
+
+-- Animals: add is_chipped column if not exists
+ALTER TABLE public.animals ADD COLUMN IF NOT EXISTS is_chipped BOOLEAN DEFAULT false;
+
+-- =====================
+-- ADMIN MODERATION POLICIES
+-- =====================
+
+-- Admin can delete any post (for moderation)
+DROP POLICY IF EXISTS "Admins can delete any post" ON public.posts;
+CREATE POLICY "Admins can delete any post" ON public.posts FOR DELETE USING (public.has_role(auth.uid(), 'admin'));
+
+-- Admin can view all posts (for moderation listing)
+DROP POLICY IF EXISTS "Admins can manage all posts" ON public.posts;
+CREATE POLICY "Admins can manage all posts" ON public.posts FOR ALL USING (public.has_role(auth.uid(), 'admin'));
+
+-- Admin can view ALL blog articles (including unpublished)
+DROP POLICY IF EXISTS "Admins can manage all blog articles" ON public.blog_articles;
+CREATE POLICY "Admins can manage all blog articles" ON public.blog_articles FOR ALL USING (public.has_role(auth.uid(), 'admin'));
+
+-- =====================
+-- APPOINTMENTS: Add patient columns
+-- =====================
+ALTER TABLE public.appointments ADD COLUMN IF NOT EXISTS patient_name TEXT;
+ALTER TABLE public.appointments ADD COLUMN IF NOT EXISTS patient_email TEXT;
+
+-- =====================
+-- REGISTRATION METADATA COLUMNS
+-- =====================
+
+-- Vet: store license/order number for admin verification
+ALTER TABLE public.veterinarians ADD COLUMN IF NOT EXISTS license_number TEXT;
+
+-- Association: store SIRET number for admin verification
+ALTER TABLE public.associations ADD COLUMN IF NOT EXISTS siret TEXT;
+
+-- Update the professional signup trigger to also store license_number / siret
+CREATE OR REPLACE FUNCTION public.handle_new_professional()
+RETURNS TRIGGER AS $$
+DECLARE
+  v_role        TEXT;
+  v_name        TEXT;
+  v_specialty   TEXT;
+  v_city        TEXT;
+  v_phone       TEXT;
+  v_address     TEXT;
+  v_description TEXT;
+  v_website     TEXT;
+  v_license     TEXT;
+  v_siret       TEXT;
+BEGIN
+  v_role        := NEW.raw_user_meta_data->>'role';
+  v_name        := COALESCE(NEW.raw_user_meta_data->>'full_name', '');
+  v_specialty   := COALESCE(NEW.raw_user_meta_data->>'specialty', 'Médecine générale');
+  v_city        := COALESCE(NEW.raw_user_meta_data->>'city', '');
+  v_phone       := COALESCE(NEW.raw_user_meta_data->>'phone', '');
+  v_address     := COALESCE(NEW.raw_user_meta_data->>'address', '');
+  v_description := COALESCE(NEW.raw_user_meta_data->>'description', '');
+  v_website     := COALESCE(NEW.raw_user_meta_data->>'website', '');
+  v_license     := COALESCE(NEW.raw_user_meta_data->>'license_number', '');
+  v_siret       := COALESCE(NEW.raw_user_meta_data->>'siret', '');
+
+  IF v_role = 'veterinaire' THEN
+    INSERT INTO public.veterinarians (user_id, name, specialty, city, phone, address, description, license_number, is_verified)
+    VALUES (NEW.id, v_name, v_specialty, v_city, v_phone, v_address, v_description, v_license, false)
+    ON CONFLICT DO NOTHING;
+
+    INSERT INTO public.user_roles (user_id, role)
+    VALUES (NEW.id, 'professional')
+    ON CONFLICT (user_id, role) DO NOTHING;
+
+  ELSIF v_role = 'association' THEN
+    INSERT INTO public.associations (user_id, name, city, phone, address, description, website, siret, is_verified)
+    VALUES (NEW.id, v_name, v_city, v_phone, v_address, v_description, v_website, v_siret, false)
+    ON CONFLICT DO NOTHING;
+
+    INSERT INTO public.user_roles (user_id, role)
+    VALUES (NEW.id, 'professional')
+    ON CONFLICT (user_id, role) DO NOTHING;
+  END IF;
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+DROP TRIGGER IF EXISTS on_auth_user_created_professional ON auth.users;
+CREATE TRIGGER on_auth_user_created_professional
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_professional();

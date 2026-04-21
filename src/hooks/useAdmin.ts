@@ -62,9 +62,51 @@ export function useAdmin() {
     loadAll();
   };
 
+  const addBlogArticle = async (fields: {
+    title: string;
+    content: string;
+    category: string;
+    excerpt?: string;
+    image_url?: string;
+  }) => {
+    if (!user) return;
+    const { error } = await supabase.from("blog_articles").insert({
+      author_id: user.id,
+      title: fields.title,
+      content: fields.content,
+      category: fields.category as any,
+      excerpt: fields.excerpt || null,
+      image_url: fields.image_url || null,
+      is_published: true,
+      published_at: new Date().toISOString(),
+    });
+    if (!error) loadAll();
+    return error;
+  };
+
+  const updateBlogArticle = async (id: string, fields: {
+    title?: string;
+    content?: string;
+    category?: string;
+    excerpt?: string;
+    image_url?: string;
+  }) => {
+    const updateData: Record<string, any> = {};
+    if (fields.title !== undefined) updateData.title = fields.title;
+    if (fields.content !== undefined) updateData.content = fields.content;
+    if (fields.category !== undefined) updateData.category = fields.category;
+    if (fields.excerpt !== undefined) updateData.excerpt = fields.excerpt;
+    if (fields.image_url !== undefined) updateData.image_url = fields.image_url;
+    
+    const { error } = await supabase.from("blog_articles").update(updateData).eq("id", id);
+    if (!error) loadAll();
+    return error;
+  };
+
   return {
     vets, assocs, posts, blogs, loading,
     verifyVet, verifyAssoc, deletePost, toggleBlogStatus, deleteBlog,
+    addBlogArticle, updateBlogArticle,
     refresh: loadAll
   };
 }

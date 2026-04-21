@@ -36,14 +36,14 @@ export default function DashboardAssocPage() {
   // New animal form
   const [newAnimal, setNewAnimal] = useState({
     name:"", species:"dog", breed:"", age_months:"", gender:"Mâle",
-    description:"", is_vaccinated:false, is_sterilized:false, status:"available"
+    description:"", image_url:"", is_vaccinated:false, is_sterilized:false, is_chipped:false, status:"available"
   });
   const [addingAnimal, setAddingAnimal] = useState(false);
   const [showAnimalForm, setShowAnimalForm] = useState(false);
 
   // New campaign form
   const [showCampaignForm, setShowCampaignForm] = useState(false);
-  const [newCampaign, setNewCampaign] = useState({ title: "", description: "", event_date: "" });
+  const [newCampaign, setNewCampaign] = useState({ title: "", description: "", event_date: "", location: "" });
   const [addingCampaign, setAddingCampaign] = useState(false);
 
   if (!user || role !== "association") { navigate("/"); return null; }
@@ -68,7 +68,7 @@ export default function DashboardAssocPage() {
     });
     setAddingAnimal(false);
     setShowAnimalForm(false);
-    setNewAnimal({ name:"", species:"dog", breed:"", age_months:"", gender:"Mâle", description:"", is_vaccinated:false, is_sterilized:false, status:"available" });
+    setNewAnimal({ name:"", species:"dog", breed:"", age_months:"", gender:"Mâle", description:"", image_url:"", is_vaccinated:false, is_sterilized:false, is_chipped:false, status:"available" });
   };
 
   const handleAddCampaign = async () => {
@@ -77,11 +77,12 @@ export default function DashboardAssocPage() {
     await addCampaign({
       title: newCampaign.title,
       description: newCampaign.description,
+      location: newCampaign.location || null,
       event_date: newCampaign.event_date ? new Date(newCampaign.event_date).toISOString() : null
     });
     setAddingCampaign(false);
     setShowCampaignForm(false);
-    setNewCampaign({ title: "", description: "", event_date: "" });
+    setNewCampaign({ title: "", description: "", event_date: "", location: "" });
   };
 
   const tabs = [
@@ -212,6 +213,13 @@ export default function DashboardAssocPage() {
                         className="w-full border border-border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
                     </div>
                     <div className="col-span-2">
+                      <label className="block text-xs font-semibold text-foreground mb-1">Photo (URL)</label>
+                      <input type="url" placeholder="https://example.com/photo.jpg"
+                        value={newAnimal.image_url}
+                        onChange={e=>setNewAnimal(a=>({...a,image_url:e.target.value}))}
+                        className="w-full border border-border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                    </div>
+                    <div className="col-span-2">
                       <label className="block text-xs font-semibold text-foreground mb-1">Description</label>
                       <textarea rows={2} placeholder="Décrivez l'animal..."
                         value={newAnimal.description}
@@ -230,6 +238,12 @@ export default function DashboardAssocPage() {
                           onChange={e=>setNewAnimal(a=>({...a,is_sterilized:e.target.checked}))}
                           className="w-4 h-4 rounded accent-primary" />
                         Stérilisé
+                      </label>
+                      <label className="flex items-center gap-2 text-sm cursor-pointer">
+                        <input type="checkbox" checked={newAnimal.is_chipped}
+                          onChange={e=>setNewAnimal(a=>({...a,is_chipped:e.target.checked}))}
+                          className="w-4 h-4 rounded accent-primary" />
+                        Pucé
                       </label>
                     </div>
                   </div>
@@ -348,12 +362,21 @@ export default function DashboardAssocPage() {
                         onChange={e => setNewCampaign(c=>({...c,title:e.target.value}))}
                         className="w-full border border-border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
                     </div>
-                    <div>
-                      <label className="block text-xs font-semibold text-foreground mb-1">Date limite / Événement (Optionnel)</label>
-                      <input type="date"
-                        value={newCampaign.event_date}
-                        onChange={e => setNewCampaign(c=>({...c,event_date:e.target.value}))}
-                        className="w-full border border-border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-semibold text-foreground mb-1">Date de l'événement</label>
+                        <input type="date"
+                          value={newCampaign.event_date}
+                          onChange={e => setNewCampaign(c=>({...c,event_date:e.target.value}))}
+                          className="w-full border border-border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-foreground mb-1">Lieu</label>
+                        <input type="text" placeholder="Ex: Tunis, Parc Belvedere"
+                          value={newCampaign.location}
+                          onChange={e => setNewCampaign(c=>({...c,location:e.target.value}))}
+                          className="w-full border border-border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                      </div>
                     </div>
                     <div>
                       <label className="block text-xs font-semibold text-foreground mb-1">Description complète</label>

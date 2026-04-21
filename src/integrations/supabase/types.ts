@@ -396,6 +396,9 @@ export type Database = {
           specialty: string | null
           updated_at: string
           user_id: string | null
+          rating: number | null
+          review_count: number | null
+          working_hours: string | null
         }
         Insert: {
           address?: string | null
@@ -413,6 +416,9 @@ export type Database = {
           specialty?: string | null
           updated_at?: string
           user_id?: string | null
+          rating?: number | null
+          review_count?: number | null
+          working_hours?: string | null
         }
         Update: {
           address?: string | null
@@ -430,8 +436,282 @@ export type Database = {
           specialty?: string | null
           updated_at?: string
           user_id?: string | null
+          rating?: number | null
+          review_count?: number | null
+          working_hours?: string | null
         }
         Relationships: []
+      }
+      availability_slots: {
+        Row: {
+          id: string
+          vet_id: string
+          day_of_week: number
+          start_time: string
+          end_time: string
+          is_active: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          vet_id: string
+          day_of_week: number
+          start_time: string
+          end_time: string
+          is_active?: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          vet_id?: string
+          day_of_week?: number
+          start_time?: string
+          end_time?: string
+          is_active?: boolean
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "availability_slots_vet_id_fkey"
+            columns: ["vet_id"]
+            isOneToOne: false
+            referencedRelation: "veterinarians"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      booked_slots: {
+        Row: {
+          id: string
+          vet_id: string
+          booked_date: string
+          booked_time: string
+          appointment_id: string | null
+        }
+        Insert: {
+          id?: string
+          vet_id: string
+          booked_date: string
+          booked_time: string
+          appointment_id?: string | null
+        }
+        Update: {
+          id?: string
+          vet_id?: string
+          booked_date?: string
+          booked_time?: string
+          appointment_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booked_slots_vet_id_fkey"
+            columns: ["vet_id"]
+            isOneToOne: false
+            referencedRelation: "veterinarians"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booked_slots_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      posts: {
+        Row: {
+          id: string
+          author_id: string
+          author_type: string
+          author_name: string
+          content: string
+          image_url: string | null
+          likes_count: number
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          author_id: string
+          author_type: string
+          author_name: string
+          content: string
+          image_url?: string | null
+          likes_count?: number
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          author_id?: string
+          author_type?: string
+          author_name?: string
+          content?: string
+          image_url?: string | null
+          likes_count?: number
+          created_at?: string
+        }
+        Relationships: []
+      }
+      post_likes: {
+        Row: {
+          id: string
+          post_id: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          post_id: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          post_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_likes_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      favorites: {
+        Row: {
+          id: string
+          user_id: string
+          target_type: string
+          target_id: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          target_type: string
+          target_id: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          target_type?: string
+          target_id?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
+      campaigns: {
+        Row: {
+          id: string
+          association_id: string
+          title: string
+          description: string
+          event_date: string | null
+          location: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          association_id: string
+          title: string
+          description: string
+          event_date?: string | null
+          location?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          association_id?: string
+          title?: string
+          description?: string
+          event_date?: string | null
+          location?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaigns_association_id_fkey"
+            columns: ["association_id"]
+            isOneToOne: false
+            referencedRelation: "associations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      donations: {
+        Row: {
+          id: string
+          user_id: string
+          association_id: string
+          amount: number
+          status: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          association_id: string
+          amount: number
+          status?: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          association_id?: string
+          amount?: number
+          status?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "donations_association_id_fkey"
+            columns: ["association_id"]
+            isOneToOne: false
+            referencedRelation: "associations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      volunteer_requests: {
+        Row: {
+          id: string
+          user_id: string
+          association_id: string
+          message: string | null
+          status: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          association_id: string
+          message?: string | null
+          status?: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          association_id?: string
+          message?: string | null
+          status?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "volunteer_requests_association_id_fkey"
+            columns: ["association_id"]
+            isOneToOne: false
+            referencedRelation: "associations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

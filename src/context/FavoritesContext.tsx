@@ -11,6 +11,7 @@ interface FavoritesContextType {
   toggleAnimal: (id: string, name: string) => void;
   toggleVet:    (id: string | number, name: string) => void;
   toggleAssoc:  (id: string, name: string) => void;
+  addToast: (message: string, type?: string) => void;
   toasts: ToastMsg[];
   heartPulse: boolean;
 }
@@ -18,6 +19,7 @@ interface FavoritesContextType {
 const FavoritesContext = createContext<FavoritesContextType>({
   favAnimals: [], favVets: [], favAssocs: [],
   toggleAnimal: () => {}, toggleVet: () => {}, toggleAssoc: () => {},
+  addToast: () => {},
   toasts: [], heartPulse: false,
 });
 
@@ -102,6 +104,7 @@ export const FavoritesProvider = ({ children }: { children: ReactNode }) => {
     <FavoritesContext.Provider value={{
       favAnimals, favVets, favAssocs,
       toggleAnimal, toggleVet, toggleAssoc,
+      addToast,
       toasts, heartPulse,
     }}>
       {children}
